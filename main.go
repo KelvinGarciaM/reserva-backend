@@ -14,7 +14,7 @@ import (
 func main() {
 
 	// 1. Cargar configuración
-	config, err := utils.LoadConfig(".")
+	config, err := utils.LoadConfig("utils")
 	if err != nil {
 		log.Fatal("Error cargando config:", err)
 	}
