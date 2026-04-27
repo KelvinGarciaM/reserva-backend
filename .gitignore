@@ -1,21 +1,13 @@
 # binarios
 *.exe
 *.out
-*.bin
 
 # dependencias
 vendor/
-go.sum
 
-# env
+# variables de entorno
 .env
-
-# logs
-*.log
+app.env
 
 # sistema
 .DS_Store
-
-# editor
-.vscode/
-.idea/
