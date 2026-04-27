@@ -1,0 +1,21 @@
+# binarios
+*.exe
+*.out
+*.bin
+
+# dependencias
+vendor/
+go.sum
+
+# env
+.env
+
+# logs
+*.log
+
+# sistema
+.DS_Store
+
+# editor
+.vscode/
+.idea/
