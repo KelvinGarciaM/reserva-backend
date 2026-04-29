@@ -6,15 +6,93 @@ package dto
 
 import (
 	"database/sql"
+	"time"
 )
 
+type Cliente struct {
+	Cedula        int32  `json:"cedula"`
+	Idtipocliente int32  `json:"idtipocliente"`
+	Nombre        string `json:"nombre"`
+	Apellidos     string `json:"apellidos"`
+	Telefono      string `json:"telefono"`
+	Direccion     string `json:"direccion"`
+	Estado        int8   `json:"estado"`
+}
+
+type Detallereserva struct {
+	Iddetallereserva int32  `json:"iddetallereserva"`
+	Idhabitacion     int32  `json:"idhabitacion"`
+	Idreserva        int32  `json:"idreserva"`
+	Idtarifa         int32  `json:"idtarifa"`
+	Cantidadpersonas int32  `json:"cantidadpersonas"`
+	Precioaplicado   string `json:"precioaplicado"`
+	Subtotal         string `json:"subtotal"`
+	Estado           int8   `json:"estado"`
+}
+
+type Habitacion struct {
+	Idhabitacion     int32  `json:"idhabitacion"`
+	Idtipohab        int32  `json:"idtipohab"`
+	Numerohabitacion string `json:"numerohabitacion"`
+	Estadohabitacion string `json:"estadohabitacion"`
+	Estado           int8   `json:"estado"`
+}
+
+type Recepcionistum struct {
+	Cedula    int32  `json:"cedula"`
+	Nombre    string `json:"nombre"`
+	Apellidos string `json:"apellidos"`
+	Telefono  string `json:"telefono"`
+	Correo    string `json:"correo"`
+	Estado    int8   `json:"estado"`
+}
+
+type Reserva struct {
+	Idreserva       int32     `json:"idreserva"`
+	Idrecepcionista int32     `json:"idrecepcionista"`
+	Idcliente       int32     `json:"idcliente"`
+	Fechareserva    time.Time `json:"fechareserva"`
+	Fechaentrada    time.Time `json:"fechaentrada"`
+	Fechasalida     time.Time `json:"fechasalida"`
+	Cantidadnoches  int32     `json:"cantidadnoches"`
+	Estadoreserva   string    `json:"estadoreserva"`
+	Estado          int8      `json:"estado"`
+}
+
+type Tarifa struct {
+	Idtarifa         int32         `json:"idtarifa"`
+	Idtipohabitacion int32         `json:"idtipohabitacion"`
+	Idtipocliente    sql.NullInt32 `json:"idtipocliente"`
+	Preciobase       string        `json:"preciobase"`
+	Nombretarifa     string        `json:"nombretarifa"`
+	Fechainicio      sql.NullTime  `json:"fechainicio"`
+	Fechafin         sql.NullTime  `json:"fechafin"`
+	Estado           int8          `json:"estado"`
+}
+
+type Tipocliente struct {
+	Idtipocliente int32  `json:"idtipocliente"`
+	Nombretipoc   string `json:"nombretipoc"`
+	Descripcion   string `json:"descripcion"`
+	Descuentobase string `json:"descuentobase"`
+	Estado        int8   `json:"estado"`
+}
+
+type Tipohabitacion struct {
+	Idtipohabitacion int32  `json:"idtipohabitacion"`
+	Nombretipohab    string `json:"nombretipohab"`
+	Descripcion      string `json:"descripcion"`
+	Capacidadmaxima  int32  `json:"capacidadmaxima"`
+	Estado           int8   `json:"estado"`
+}
+
 type User struct {
-	ID            int32          `json:"id"`
-	Name          string         `json:"name"`
-	Role          sql.NullString `json:"role"`
-	Email         string         `json:"email"`
-	Password      string         `json:"password"`
-	CreatedAt     sql.NullTime   `json:"created_at"`
-	UpdatedAt     sql.NullTime   `json:"updated_at"`
-	RememberToken sql.NullString `json:"remember_token"`
+	ID        int32          `json:"id"`
+	Name      string         `json:"name"`
+	Role      sql.NullString `json:"role"`
+	Email     string         `json:"email"`
+	Password  string         `json:"password"`
+	Estado    int8           `json:"estado"`
+	CreatedAt sql.NullTime   `json:"created_at"`
+	UpdatedAt sql.NullTime   `json:"updated_at"`
 }

@@ -1,3 +1,4 @@
+
 CREATE TABLE tipoCliente (
     idTipoCliente INT AUTO_INCREMENT PRIMARY KEY,
     nombreTipoC VARCHAR(45) NOT NULL,
@@ -31,14 +32,17 @@ CREATE TABLE Recepcionista (
 
 CREATE TABLE Reserva (
     idReserva INT AUTO_INCREMENT PRIMARY KEY,
+
     idRecepcionista INT NOT NULL,
     idCliente INT NOT NULL,
+
     fechaReserva DATETIME NOT NULL,
-    fechaEntrada DATE NOT NULL,
-    fechaSalida DATE NOT NULL,
+
+    fechaEntrada DATETIME NOT NULL,
+    fechaSalida DATETIME NOT NULL,
+
     cantidadNoches INT NOT NULL,
-    horaCheckIn TIME NOT NULL,
-    horaCheckOut TIME NOT NULL,
+
     estadoReserva VARCHAR(25) NOT NULL,
     estado TINYINT NOT NULL DEFAULT 1,
 
@@ -49,7 +53,7 @@ CREATE TABLE Reserva (
     CONSTRAINT FK_Reserva_Cliente
         FOREIGN KEY (idCliente)
         REFERENCES Cliente(cedula)
-) ENGINE = InnoDB;
+) ENGINE=InnoDB;
 
 CREATE TABLE TipoHabitacion (
     idTipoHabitacion INT AUTO_INCREMENT PRIMARY KEY,
@@ -119,7 +123,8 @@ CREATE TABLE users (
     role VARCHAR(30) DEFAULT 'user',
     email VARCHAR(150) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
+    estado TINYINT NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    remember_token VARCHAR(255)
-) ENGINE=InnoDB;
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    
+);

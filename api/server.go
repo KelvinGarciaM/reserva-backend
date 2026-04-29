@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"reserva-backend/api/handlers"
-	"reserva-backend/api/middleware"
 	"reserva-backend/dto"
 
 	"github.com/gin-gonic/gin"
@@ -12,10 +11,8 @@ import (
 )
 
 type Server struct {
-	dbtx        *dto.Queries
-	router      *gin.Engine
-	userHandler *handlers.UserHandler
-	authHandler *handlers.AuthHandler
+	dbtx   *dto.Queries
+	router *gin.Engine
 }
 
 func NewServer(dbtx *dto.Queries) (*Server, error) {
@@ -24,47 +21,24 @@ func NewServer(dbtx *dto.Queries) (*Server, error) {
 		dbtx: dbtx,
 	}
 
-	// =========================
-	// INIT HANDLERS
-	// =========================
-	server.userHandler = handlers.NewUserHandler(dbtx)
-	server.authHandler = handlers.NewAuthHandler(dbtx)
+	userHandler := handlers.NewUserHandler(dbtx)
+	authHandler := handlers.NewAuthHandler(dbtx)
+	reservaHandler := handlers.NewReservaHandler(dbtx)
 
 	router := gin.Default()
 
-	// =========================
-	// CORS
-	// =========================
 	router.Use(cors.Middleware(cors.Config{
-		Origins:         "*",
-		Methods:         "GET,POST,PUT,DELETE",
-		RequestHeaders:  "Origin,Authorization,Content-Type",
-		ExposedHeaders:  "",
-		MaxAge:          50 * time.Second,
-		Credentials:     false,
-		ValidateHeaders: false,
+		Origins:        "*",
+		Methods:        "GET,POST,PUT,DELETE",
+		RequestHeaders: "Origin,Authorization,Content-Type",
+		MaxAge:         50 * time.Second,
 	}))
 
-	// =========================
-	// ROUTES PUBLICAS
-	// =========================
-	api := router.Group("/api/v1")
-	{
-		api.POST("/users", server.userHandler.Register)
-		api.POST("/login", server.authHandler.Login)
-	}
-
-	// =========================
-	// ROUTES PROTEGIDAS
-	// =========================
-	protected := router.Group("/api/v1")
-	protected.Use(middleware.AuthMiddleware())
-	{
-		protected.GET("/users", server.userHandler.GetUsers)
-		protected.GET("/users/:email", server.userHandler.GetUserByEmail)
-		protected.PUT("/users", server.userHandler.UpdateUser)
-		protected.DELETE("/users", server.userHandler.DeleteUser)
-	}
+	SetupRoutes(router, Handlers{
+		UserHandler:    userHandler,
+		AuthHandler:    authHandler,
+		ReservaHandler: reservaHandler,
+	})
 
 	server.router = router
 	return server, nil
