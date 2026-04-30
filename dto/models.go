@@ -55,20 +55,19 @@ type Reserva struct {
 	Fechaentrada    time.Time `json:"fechaentrada"`
 	Fechasalida     time.Time `json:"fechasalida"`
 	Cantidadnoches  int32     `json:"cantidadnoches"`
-	Horacheckin     time.Time `json:"horacheckin"`
-	Horacheckout    time.Time `json:"horacheckout"`
 	Estadoreserva   string    `json:"estadoreserva"`
 	Estado          int8      `json:"estado"`
 }
 
 type Tarifa struct {
-	Idtarifa         int32        `json:"idtarifa"`
-	Idtipohabitacion int32        `json:"idtipohabitacion"`
-	Preciobase       string       `json:"preciobase"`
-	Nombretarifa     string       `json:"nombretarifa"`
-	Fechainicio      sql.NullTime `json:"fechainicio"`
-	Fechafin         sql.NullTime `json:"fechafin"`
-	Estado           int8         `json:"estado"`
+	Idtarifa         int32         `json:"idtarifa"`
+	Idtipohabitacion int32         `json:"idtipohabitacion"`
+	Idtipocliente    sql.NullInt32 `json:"idtipocliente"`
+	Preciobase       string        `json:"preciobase"`
+	Nombretarifa     string        `json:"nombretarifa"`
+	Fechainicio      sql.NullTime  `json:"fechainicio"`
+	Fechafin         sql.NullTime  `json:"fechafin"`
+	Estado           int8          `json:"estado"`
 }
 
 type Tipocliente struct {
@@ -88,12 +87,12 @@ type Tipohabitacion struct {
 }
 
 type User struct {
-	ID            int32          `json:"id"`
-	Name          string         `json:"name"`
-	Role          sql.NullString `json:"role"`
-	Email         string         `json:"email"`
-	Password      string         `json:"password"`
-	CreatedAt     sql.NullTime   `json:"created_at"`
-	UpdatedAt     sql.NullTime   `json:"updated_at"`
-	RememberToken sql.NullString `json:"remember_token"`
+	ID        int32          `json:"id"`
+	Name      string         `json:"name"`
+	Role      sql.NullString `json:"role"`
+	Email     string         `json:"email"`
+	Password  string         `json:"password"`
+	Estado    int8           `json:"estado"`
+	CreatedAt sql.NullTime   `json:"created_at"`
+	UpdatedAt sql.NullTime   `json:"updated_at"`
 }

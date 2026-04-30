@@ -32,24 +32,36 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 	return err
 }
 
-const deleteUser = `-- name: DeleteUser :exec
-DELETE FROM users WHERE id = ?
+const deleteUser = `-- name: DeleteUser :execresult
+UPDATE users
+SET estado = 0
+WHERE id = ?
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteUser, id)
-	return err
+func (q *Queries) DeleteUser(ctx context.Context, id int32) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteUser, id)
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, role, email, password, created_at, updated_at, remember_token
+SELECT id, name, role, email, password, created_at, updated_at, estado
 FROM users
-WHERE email = ?
+WHERE email = ? AND estado = 1
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+type GetUserByEmailRow struct {
+	ID        int32          `json:"id"`
+	Name      string         `json:"name"`
+	Role      sql.NullString `json:"role"`
+	Email     string         `json:"email"`
+	Password  string         `json:"password"`
+	CreatedAt sql.NullTime   `json:"created_at"`
+	UpdatedAt sql.NullTime   `json:"updated_at"`
+	Estado    int8           `json:"estado"`
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
 	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
-	var i User
+	var i GetUserByEmailRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -58,14 +70,14 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.RememberToken,
+		&i.Estado,
 	)
 	return i, err
 }
 
 const getUsers = `-- name: GetUsers :many
-SELECT id, name, role, email, created_at, updated_at
-FROM users
+SELECT id, name, role, email, created_at, updated_at, estado
+FROM users where estado = 1
 `
 
 type GetUsersRow struct {
@@ -75,6 +87,7 @@ type GetUsersRow struct {
 	Email     string         `json:"email"`
 	CreatedAt sql.NullTime   `json:"created_at"`
 	UpdatedAt sql.NullTime   `json:"updated_at"`
+	Estado    int8           `json:"estado"`
 }
 
 func (q *Queries) GetUsers(ctx context.Context) ([]GetUsersRow, error) {
@@ -93,6 +106,7 @@ func (q *Queries) GetUsers(ctx context.Context) ([]GetUsersRow, error) {
 			&i.Email,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Estado,
 		); err != nil {
 			return nil, err
 		}
@@ -107,31 +121,61 @@ func (q *Queries) GetUsers(ctx context.Context) ([]GetUsersRow, error) {
 	return items, nil
 }
 
-const updateUser = `-- name: UpdateUser :exec
+const updateUserWithPassword = `-- name: UpdateUserWithPassword :execresult
 UPDATE users
 SET
     name = ?,
     role = ?,
     email = ?,
-    password = ?
+    password = ?,
+    estado = ?
 WHERE id = ?
 `
 
-type UpdateUserParams struct {
+type UpdateUserWithPasswordParams struct {
 	Name     string         `json:"name"`
 	Role     sql.NullString `json:"role"`
 	Email    string         `json:"email"`
 	Password string         `json:"password"`
+	Estado   int8           `json:"estado"`
 	ID       int32          `json:"id"`
 }
 
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	_, err := q.db.ExecContext(ctx, updateUser,
+func (q *Queries) UpdateUserWithPassword(ctx context.Context, arg UpdateUserWithPasswordParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateUserWithPassword,
 		arg.Name,
 		arg.Role,
 		arg.Email,
 		arg.Password,
+		arg.Estado,
 		arg.ID,
 	)
-	return err
+}
+
+const updateUserWithoutPassword = `-- name: UpdateUserWithoutPassword :execresult
+UPDATE users
+SET
+    name = ?,
+    role = ?,
+    email = ?,
+    estado = ?
+WHERE id = ?
+`
+
+type UpdateUserWithoutPasswordParams struct {
+	Name   string         `json:"name"`
+	Role   sql.NullString `json:"role"`
+	Email  string         `json:"email"`
+	Estado int8           `json:"estado"`
+	ID     int32          `json:"id"`
+}
+
+func (q *Queries) UpdateUserWithoutPassword(ctx context.Context, arg UpdateUserWithoutPasswordParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateUserWithoutPassword,
+		arg.Name,
+		arg.Role,
+		arg.Email,
+		arg.Estado,
+		arg.ID,
+	)
 }
