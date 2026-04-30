@@ -1,21 +1,27 @@
 package api
 
 import (
-	"time"
-
 	"reserva-backend/api/handlers"
 	"reserva-backend/api/middleware"
 	"reserva-backend/dto"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	cors "github.com/itsjamie/gin-cors"
 )
 
 type Server struct {
-	dbtx        *dto.Queries
-	router      *gin.Engine
-	userHandler *handlers.UserHandler
-	authHandler *handlers.AuthHandler
+	dbtx          *dto.Queries
+	router        *gin.Engine
+	userHandler   *handlers.UserHandler
+	authHandler   *handlers.AuthHandler
+	tarifaHandler *handlers.TarifaHandler
+}
+
+func ErrorResponse(err error) gin.H {
+	return gin.H{
+		"error": err.Error(),
+	}
 }
 
 func NewServer(dbtx *dto.Queries) (*Server, error) {
@@ -29,6 +35,7 @@ func NewServer(dbtx *dto.Queries) (*Server, error) {
 	// =========================
 	server.userHandler = handlers.NewUserHandler(dbtx)
 	server.authHandler = handlers.NewAuthHandler(dbtx)
+	server.tarifaHandler = handlers.NewTarifaHandler(dbtx)
 
 	router := gin.Default()
 
@@ -52,6 +59,11 @@ func NewServer(dbtx *dto.Queries) (*Server, error) {
 	{
 		api.POST("/users", server.userHandler.Register)
 		api.POST("/login", server.authHandler.Login)
+		api.POST("/createtarifa", server.tarifaHandler.CreateTarifa)
+		api.GET("/tarifas", server.tarifaHandler.GetTarifas)
+		api.GET("/tarifas/:nombreTarifa", server.tarifaHandler.GetTarifaByNombre)
+		api.PATCH("tarifas/:idTarifa", server.tarifaHandler.UpdateTarifa)
+		api.DELETE("tarifas/:idTarifa", server.tarifaHandler.DeleteTarifa)
 	}
 
 	// =========================

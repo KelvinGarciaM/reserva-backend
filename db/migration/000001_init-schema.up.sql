@@ -74,7 +74,6 @@ CREATE TABLE Habitacion (
 CREATE TABLE Tarifa (
     idTarifa INT AUTO_INCREMENT PRIMARY KEY,
     idTipoHabitacion INT NOT NULL,
-    idTipoCliente INT NULL,
     precioBase DECIMAL(10,2) NOT NULL,
     nombreTarifa VARCHAR(45) NOT NULL,
     fechaInicio DATE NULL,
