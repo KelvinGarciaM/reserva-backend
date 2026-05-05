@@ -24,6 +24,9 @@ func NewServer(dbtx *dto.Queries) (*Server, error) {
 	userHandler := handlers.NewUserHandler(dbtx)
 	authHandler := handlers.NewAuthHandler(dbtx)
 	reservaHandler := handlers.NewReservaHandler(dbtx)
+	clienteHandler := handlers.NewClienteHandler(dbtx)
+	tipoClienteHandler := handlers.NewTipoClienteHandler(dbtx)
+	recepcionistaHandler := handlers.NewRecepcionistaHandler(dbtx)
 
 	router := gin.Default()
 
@@ -35,9 +38,12 @@ func NewServer(dbtx *dto.Queries) (*Server, error) {
 	}))
 
 	SetupRoutes(router, Handlers{
-		UserHandler:    userHandler,
-		AuthHandler:    authHandler,
-		ReservaHandler: reservaHandler,
+		UserHandler:          userHandler,
+		AuthHandler:          authHandler,
+		ReservaHandler:       reservaHandler,
+		ClienteHandler:       clienteHandler,
+		TipoClienteHandler:   tipoClienteHandler,
+		RecepcionistaHandler: recepcionistaHandler,
 	})
 
 	server.router = router
