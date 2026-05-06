@@ -25,8 +25,6 @@ type registerReservaRequest struct {
 	IdRecepcionista int32  `json:"idRecepcionista" binding:"required"`
 	IdCliente       int32  `json:"idCliente" binding:"required"`
 	FechaReserva    string `json:"fechaReserva" binding:"required"`
-	FechaEntrada    string `json:"fechaEntrada" binding:"required"`
-	FechaSalida     string `json:"fechaSalida" binding:"required"`
 	CantidadNoches  int32  `json:"cantidadNoches" binding:"required"`
 	EstadoReserva   string `json:"estadoReserva" binding:"required"`
 }
@@ -35,8 +33,6 @@ type updateReservaRequest struct {
 	IdRecepcionista int32  `json:"idRecepcionista" binding:"required"`
 	IdCliente       int32  `json:"idCliente" binding:"required"`
 	FechaReserva    string `json:"fechaReserva" binding:"required"`
-	FechaEntrada    string `json:"fechaEntrada" binding:"required"`
-	FechaSalida     string `json:"fechaSalida" binding:"required"`
 	CantidadNoches  int32  `json:"cantidadNoches" binding:"required"`
 	EstadoReserva   string `json:"estadoReserva" binding:"required"`
 	Estado          int8   `json:"estado"`
@@ -46,25 +42,15 @@ type updateReservaRequest struct {
    HELPERS
 ========================= */
 
-func parseFechas(req registerReservaRequest) (time.Time, time.Time, time.Time, error) {
+func parseFechas(req registerReservaRequest) (time.Time, error) {
 	layout := time.RFC3339
 
 	fechaReserva, err := time.Parse(layout, req.FechaReserva)
 	if err != nil {
-		return time.Time{}, time.Time{}, time.Time{}, err
+		return time.Time{}, err
 	}
 
-	fechaEntrada, err := time.Parse(layout, req.FechaEntrada)
-	if err != nil {
-		return time.Time{}, time.Time{}, time.Time{}, err
-	}
-
-	fechaSalida, err := time.Parse(layout, req.FechaSalida)
-	if err != nil {
-		return time.Time{}, time.Time{}, time.Time{}, err
-	}
-
-	return fechaReserva, fechaEntrada, fechaSalida, nil
+	return fechaReserva, nil
 }
 
 func getID(c *gin.Context) (int32, bool) {
@@ -90,14 +76,9 @@ func (h *ReservaHandler) Register(c *gin.Context) {
 		return
 	}
 
-	fr, fe, fs, err := parseFechas(req)
+	fr, err := parseFechas(req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "formato de fecha inválido (usa ISO 8601)"})
-		return
-	}
-
-	if !fs.After(fe) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "fechaSalida debe ser mayor a fechaEntrada"})
 		return
 	}
 
@@ -105,10 +86,8 @@ func (h *ReservaHandler) Register(c *gin.Context) {
 		Idrecepcionista: req.IdRecepcionista,
 		Idcliente:       req.IdCliente,
 		Fechareserva:    fr,
-		Fechaentrada:    fe,
-		Fechasalida:     fs,
-		Cantidadnoches:  req.CantidadNoches,
-		Estadoreserva:   req.EstadoReserva,
+
+		Estadoreserva: req.EstadoReserva,
 	}
 
 	result, err := h.q.CreateReserva(c, args)
@@ -196,12 +175,10 @@ func (h *ReservaHandler) UpdateReserva(c *gin.Context) {
 		return
 	}
 
-	fr, fe, fs, err := parseFechas(registerReservaRequest{
+	fr, err := parseFechas(registerReservaRequest{
 		IdRecepcionista: req.IdRecepcionista,
 		IdCliente:       req.IdCliente,
 		FechaReserva:    req.FechaReserva,
-		FechaEntrada:    req.FechaEntrada,
-		FechaSalida:     req.FechaSalida,
 		CantidadNoches:  req.CantidadNoches,
 		EstadoReserva:   req.EstadoReserva,
 	})
@@ -210,18 +187,10 @@ func (h *ReservaHandler) UpdateReserva(c *gin.Context) {
 		return
 	}
 
-	if !fs.After(fe) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "fechaSalida debe ser mayor a fechaEntrada"})
-		return
-	}
-
 	args := dto.UpdateReservaParams{
 		Idrecepcionista: req.IdRecepcionista,
 		Idcliente:       req.IdCliente,
 		Fechareserva:    fr,
-		Fechaentrada:    fe,
-		Fechasalida:     fs,
-		Cantidadnoches:  req.CantidadNoches,
 		Estadoreserva:   req.EstadoReserva,
 		Estado:          req.Estado,
 		Idreserva:       id,

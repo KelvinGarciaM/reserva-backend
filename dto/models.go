@@ -20,21 +20,24 @@ type Cliente struct {
 }
 
 type Detallereserva struct {
-	Iddetallereserva int32  `json:"iddetallereserva"`
-	Idhabitacion     int32  `json:"idhabitacion"`
-	Idreserva        int32  `json:"idreserva"`
-	Idtarifa         int32  `json:"idtarifa"`
-	Cantidadpersonas int32  `json:"cantidadpersonas"`
-	Precioaplicado   string `json:"precioaplicado"`
-	Subtotal         string `json:"subtotal"`
-	Estado           int8   `json:"estado"`
+	Iddetallereserva int32     `json:"iddetallereserva"`
+	Idhabitacion     int32     `json:"idhabitacion"`
+	Idreserva        int32     `json:"idreserva"`
+	Idtarifa         int32     `json:"idtarifa"`
+	Cantidadpersonas int32     `json:"cantidadpersonas"`
+	Precioaplicado   string    `json:"precioaplicado"`
+	Fechaentrada     time.Time `json:"fechaentrada"`
+	Fechasalida      time.Time `json:"fechasalida"`
+	Iva              string    `json:"iva"`
+	Subtotal         string    `json:"subtotal"`
+	Total            string    `json:"total"`
+	Estado           int8      `json:"estado"`
 }
 
 type Habitacion struct {
 	Idhabitacion     int32  `json:"idhabitacion"`
 	Idtipohab        int32  `json:"idtipohab"`
 	Numerohabitacion string `json:"numerohabitacion"`
-	Estadohabitacion string `json:"estadohabitacion"`
 	Estado           int8   `json:"estado"`
 }
 
@@ -52,22 +55,18 @@ type Reserva struct {
 	Idrecepcionista int32     `json:"idrecepcionista"`
 	Idcliente       int32     `json:"idcliente"`
 	Fechareserva    time.Time `json:"fechareserva"`
-	Fechaentrada    time.Time `json:"fechaentrada"`
-	Fechasalida     time.Time `json:"fechasalida"`
-	Cantidadnoches  int32     `json:"cantidadnoches"`
 	Estadoreserva   string    `json:"estadoreserva"`
 	Estado          int8      `json:"estado"`
 }
 
 type Tarifa struct {
-	Idtarifa         int32         `json:"idtarifa"`
-	Idtipohabitacion int32         `json:"idtipohabitacion"`
-	Idtipocliente    sql.NullInt32 `json:"idtipocliente"`
-	Preciobase       string        `json:"preciobase"`
-	Nombretarifa     string        `json:"nombretarifa"`
-	Fechainicio      sql.NullTime  `json:"fechainicio"`
-	Fechafin         sql.NullTime  `json:"fechafin"`
-	Estado           int8          `json:"estado"`
+	Idtarifa         int32        `json:"idtarifa"`
+	Idtipohabitacion int32        `json:"idtipohabitacion"`
+	Preciobase       string       `json:"preciobase"`
+	Nombretarifa     string       `json:"nombretarifa"`
+	Fechainicio      sql.NullTime `json:"fechainicio"`
+	Fechafin         sql.NullTime `json:"fechafin"`
+	Estado           int8         `json:"estado"`
 }
 
 type Tipocliente struct {

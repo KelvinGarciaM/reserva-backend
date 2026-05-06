@@ -61,7 +61,6 @@ func FormatNullDate(date sql.NullTime) *string {
 	}
 	formatedd := date.Time.Format("2006-01-02")
 	return &formatedd
-
 }
 
 func FormatEstado(estado int8) string {
@@ -72,11 +71,38 @@ func FormatEstado(estado int8) string {
 	return "Inactivo"
 }
 
-func ParseInt(idTarifa string) (int32, error) {
-	valor, err := strconv.ParseInt(idTarifa, 10, 32)
+func ParseInt(id string) (int32, error) {
+	valor, err := strconv.ParseInt(id, 10, 32)
 	if err != nil {
 		return 0, err
 	}
 	numero := int32(valor)
 	return numero, nil
+}
+
+func ParseStringToDate(date string) (time.Time, error) {
+	loc, err := time.LoadLocation("America/Costa_Rica")
+	if err != nil {
+		return time.Time{}, err
+	}
+	fecha, err := time.ParseInLocation("2006-01-02", date, loc)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return fecha, nil
+}
+
+func ParseStringPtrToTime(date *string) (time.Time, error) {
+
+	loc, err := time.LoadLocation("America/Costa_Rica")
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	fecha, err := time.ParseInLocation("2006-01-02", *date, loc)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return fecha, nil
 }

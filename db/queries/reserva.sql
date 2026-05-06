@@ -3,12 +3,9 @@ INSERT INTO Reserva (
     idRecepcionista,
     idCliente,
     fechaReserva,
-    fechaEntrada,
-    fechaSalida,
-    cantidadNoches,
     estadoReserva
 )
-VALUES (?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?);
 
 
 -- name: GetReservaById :one
@@ -17,9 +14,6 @@ SELECT
     idRecepcionista,
     idCliente,
     fechaReserva,
-    fechaEntrada,
-    fechaSalida,
-    cantidadNoches,
     estadoReserva,
     estado
 FROM Reserva
@@ -32,9 +26,6 @@ SELECT
     idRecepcionista,
     idCliente,
     fechaReserva,
-    fechaEntrada,
-    fechaSalida,
-    cantidadNoches,
     estadoReserva,
     estado
 FROM Reserva
@@ -47,9 +38,6 @@ SELECT
     idRecepcionista,
     idCliente,
     fechaReserva,
-    fechaEntrada,
-    fechaSalida,
-    cantidadNoches,
     estadoReserva,
     estado
 FROM Reserva
@@ -62,9 +50,6 @@ SELECT
     idRecepcionista,
     idCliente,
     fechaReserva,
-    fechaEntrada,
-    fechaSalida,
-    cantidadNoches,
     estadoReserva,
     estado
 FROM Reserva
@@ -77,9 +62,6 @@ SET
     idRecepcionista = ?,
     idCliente = ?,
     fechaReserva = ?,
-    fechaEntrada = ?,
-    fechaSalida = ?,
-    cantidadNoches = ?,
     estadoReserva = ?,
     estado = ?
 WHERE idReserva = ?;
@@ -92,6 +74,9 @@ WHERE idReserva = ?;
 
 
 -- name: DeleteReserva :execresult
-UPDATE Reserva
-SET estado = 0
-WHERE idReserva = ?;
+UPDATE reserva
+SET estado = CASE
+    WHEN estado = 1 THEN 0
+    ELSE 1
+END
+WHERE idReserva= sqlc.arg(idReserva);
