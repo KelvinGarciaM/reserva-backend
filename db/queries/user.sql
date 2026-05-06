@@ -1,15 +1,16 @@
 -- name: CreateUser :exec
-INSERT INTO users (name, email, password, role)
-VALUES (?, ?, ?, ?);
+INSERT INTO users (name, email, password, role, image)
+VALUES (?, ?, ?, ?, ?);
 
 -- name: GetUserByEmail :one
-SELECT id, name, role, email, password, created_at, updated_at, estado
+SELECT id, name, role, email, password, image, created_at, updated_at, estado
 FROM users
 WHERE email = ? AND estado = 1;
 
 -- name: GetUsers :many
-SELECT id, name, role, email, created_at, updated_at, estado
-FROM users where estado = 1;
+SELECT id, name, role, email, image, created_at, updated_at, estado
+FROM users
+WHERE estado = 1;
 
 -- name: UpdateUserWithPassword :execresult
 UPDATE users
@@ -18,6 +19,7 @@ SET
     role = ?,
     email = ?,
     password = ?,
+    image = ?,      
     estado = ?
 WHERE id = ?;
 
@@ -27,10 +29,11 @@ SET
     name = ?,
     role = ?,
     email = ?,
+    image = ?,      
     estado = ?
 WHERE id = ?;
 
 -- name: DeleteUser :execresult
 UPDATE users
-SET estado = 0
+SET estado = NOT estado
 WHERE id = ?;

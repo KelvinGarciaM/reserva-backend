@@ -29,7 +29,7 @@ func main() {
 	dbtx := dto.New(conn)
 
 	// 4. Server
-	server, err := api.NewServer(dbtx)
+	server, err := api.NewServer(dbtx, config.TokenSymmetricKey)
 	if err != nil {
 		log.Fatal("Error iniciando server:", err)
 	}

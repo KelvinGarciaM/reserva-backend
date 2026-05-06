@@ -175,7 +175,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "usuario actualizado"})
 }
 
-// DELETE (soft)
+// DELETE (soft toggle)
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	var req deleteRequest
 
@@ -186,7 +186,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 	result, err := h.q.DeleteUser(c.Request.Context(), req.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error eliminando usuario"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error actualizando usuario"})
 		return
 	}
 
@@ -196,5 +196,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "usuario eliminado"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "estado del usuario actualizado",
+	})
 }

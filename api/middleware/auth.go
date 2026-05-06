@@ -9,29 +9,39 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AuthMiddleware() gin.HandlerFunc {
+func AuthMiddleware(builder security.Builder) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		header := c.GetHeader("Authorization")
-
-		if header == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "token requerido"})
-			c.Abort()
+		authHeader := c.GetHeader("Authorization")
+		if len(authHeader) == 0 {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token requerido"})
 			return
 		}
 
-		token := strings.TrimPrefix(header, "Bearer ")
+		fields := strings.Fields(authHeader)
 
-		payload, err := security.VerifyToken(token)
+		if len(fields) < 2 {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "formato inválido"})
+			return
+		}
+
+		if strings.ToLower(fields[0]) != "bearer" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "tipo de autorización no soportado"})
+			return
+		}
+
+		token := fields[1]
+
+		payload, err := builder.VerifyToken(token)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "token inválido"})
-			c.Abort()
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 
-		// guardar en contexto
+		// Guardar en contexto
 		c.Set("user_id", payload.UserID)
 		c.Set("email", payload.Email)
+		c.Set("role", payload.Role)
 
 		c.Next()
 	}

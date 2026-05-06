@@ -3,6 +3,7 @@ package api
 import (
 	"reserva-backend/api/handlers"
 	"reserva-backend/api/middleware"
+	"reserva-backend/security"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,7 +19,7 @@ type Handlers struct {
 	RecepcionistaHandler  *handlers.RecepcionistaHandler
 }
 
-func SetupRoutes(r *gin.Engine, h Handlers) {
+func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 
 	// =========================
 	// PUBLIC
@@ -37,7 +38,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	// PROTECTED
 	// =========================
 	protected := r.Group("/api/v1")
-	protected.Use(middleware.AuthMiddleware())
+	protected.Use(middleware.AuthMiddleware(builder))
 	{
 		// USERS
 		protected.GET("/users", h.UserHandler.GetUsers)

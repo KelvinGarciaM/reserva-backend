@@ -3,6 +3,7 @@ package api
 import (
 	"reserva-backend/api/handlers"
 	"reserva-backend/dto"
+	"reserva-backend/security"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -10,19 +11,27 @@ import (
 )
 
 type Server struct {
-	dbtx   *dto.Queries
-	router *gin.Engine
+	dbtx         *dto.Queries
+	router       *gin.Engine
+	tokenBuilder security.Builder
 }
 
-func NewServer(dbtx *dto.Queries) (*Server, error) {
+func NewServer(dbtx *dto.Queries, secret string) (*Server, error) {
+
+	//Crear builder
+	builder, err := security.NewPasetoBuilder(secret)
+	if err != nil {
+		return nil, err
+	}
 
 	server := &Server{
-		dbtx: dbtx,
+		dbtx:         dbtx,
+		tokenBuilder: builder,
 	}
 
 	// HANDLERS
 	userHandler := handlers.NewUserHandler(dbtx)
-	authHandler := handlers.NewAuthHandler(dbtx)
+	authHandler := handlers.NewAuthHandler(dbtx, builder)
 	reservaHandler := handlers.NewReservaHandler(dbtx)
 	detalleReservaHandler := handlers.NewDetalleReservaHandler(dbtx)
 	tarifaHandler := handlers.NewTarifaHandler(dbtx)
@@ -40,6 +49,7 @@ func NewServer(dbtx *dto.Queries) (*Server, error) {
 		MaxAge:         50 * time.Second,
 	}))
 
+	// PASAMOS BUILDER A LAS RUTAS
 	SetupRoutes(router, Handlers{
 		UserHandler:           userHandler,
 		AuthHandler:           authHandler,
@@ -49,7 +59,7 @@ func NewServer(dbtx *dto.Queries) (*Server, error) {
 		ClienteHandler:        clienteHandler,
 		TipoClienteHandler:    tipoClienteHandler,
 		RecepcionistaHandler:  recepcionistaHandler,
-	})
+	}, builder)
 
 	server.router = router
 	return server, nil
