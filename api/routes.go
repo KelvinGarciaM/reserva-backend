@@ -8,12 +8,14 @@ import (
 )
 
 type Handlers struct {
-	UserHandler          *handlers.UserHandler
-	AuthHandler          *handlers.AuthHandler
-	ReservaHandler       *handlers.ReservaHandler
-	ClienteHandler       *handlers.ClienteHandler
-	TipoClienteHandler   *handlers.TipoClienteHandler
-	RecepcionistaHandler *handlers.RecepcionistaHandler
+	UserHandler           *handlers.UserHandler
+	AuthHandler           *handlers.AuthHandler
+	ReservaHandler        *handlers.ReservaHandler
+	TarifaHandler         *handlers.TarifaHandler
+	DetalleReservaHandler *handlers.DetalleReservaHandler
+	ClienteHandler        *handlers.ClienteHandler
+	TipoClienteHandler    *handlers.TipoClienteHandler
+	RecepcionistaHandler  *handlers.RecepcionistaHandler
 }
 
 func SetupRoutes(r *gin.Engine, h Handlers) {
@@ -23,10 +25,12 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 	// =========================
 	api := r.Group("/api/v1")
 	{
-		// PUBLIC
 		api.POST("/users", h.UserHandler.Register)
 		api.POST("/login", h.AuthHandler.Login)
 
+		// TARIFAS públicas
+		api.GET("/tarifas", h.TarifaHandler.GetTarifas)
+		api.GET("/tarifas/:nombreTarifa", h.TarifaHandler.GetTarifaByNombre)
 	}
 
 	// =========================
@@ -41,7 +45,7 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		protected.PUT("/users", h.UserHandler.UpdateUser)
 		protected.DELETE("/users", h.UserHandler.DeleteUser)
 
-		//  RESERVAS
+		// RESERVAS
 		protected.POST("/reservas", h.ReservaHandler.Register)
 		protected.GET("/reservas", h.ReservaHandler.GetReservas)
 		protected.GET("/reservas/:id", h.ReservaHandler.GetReservaById)
@@ -50,33 +54,44 @@ func SetupRoutes(r *gin.Engine, h Handlers) {
 		protected.PUT("/reservas/:id", h.ReservaHandler.UpdateReserva)
 		protected.DELETE("/reservas/:id", h.ReservaHandler.DeleteReserva)
 
+		// DETALLE RESERVA
+		protected.POST("/detallereservas", h.DetalleReservaHandler.CreateDetalleReserva)
+		protected.GET("/detallereservas", h.DetalleReservaHandler.GetAllDetalleReserva)
+		protected.GET("/detallereservas/:idDetalleReserva", h.DetalleReservaHandler.GetDetalleReservaById)
+		protected.PATCH("/detallereservas/:idDetalleReserva", h.DetalleReservaHandler.UpdateDetalleReserva)
+		protected.DELETE("/detallereservas/:idDetalleReserva", h.DetalleReservaHandler.DeleteDetalleReserva)
+
+		// TARIFAS ADMIN
+		protected.POST("/tarifas", h.TarifaHandler.CreateTarifa)
+		protected.PATCH("/tarifas/:idTarifa", h.TarifaHandler.UpdateTarifa)
+		protected.DELETE("/tarifas/:idTarifa", h.TarifaHandler.DeleteTarifa)
+
 		// CLIENTES
-		api.POST("/clientes", h.ClienteHandler.RegisterCliente)
-		api.GET("/clientes", h.ClienteHandler.GetClientes)
-		api.GET("/clientes/buscar", h.ClienteHandler.SearchClientes)
-		api.GET("/clientes/tipo/:idtipocliente", h.ClienteHandler.GetClientesByTipoCliente)
-		api.GET("/clientes/:cedula", h.ClienteHandler.GetClienteByCedula)
-		api.PUT("/clientes", h.ClienteHandler.UpdateCliente)
-		api.DELETE("/clientes", h.ClienteHandler.DeleteCliente)
-		api.PUT("/clientes/toggle", h.ClienteHandler.ToggleClienteEstado)
+		protected.POST("/clientes", h.ClienteHandler.RegisterCliente)
+		protected.GET("/clientes", h.ClienteHandler.GetClientes)
+		protected.GET("/clientes/buscar", h.ClienteHandler.SearchClientes)
+		protected.GET("/clientes/tipo/:idtipocliente", h.ClienteHandler.GetClientesByTipoCliente)
+		protected.GET("/clientes/:cedula", h.ClienteHandler.GetClienteByCedula)
+		protected.PUT("/clientes", h.ClienteHandler.UpdateCliente)
+		protected.DELETE("/clientes", h.ClienteHandler.DeleteCliente)
+		protected.PUT("/clientes/toggle", h.ClienteHandler.ToggleClienteEstado)
 
 		// TIPO CLIENTES
-		api.POST("/tipo-clientes", h.TipoClienteHandler.CreateTipoCliente)
-		api.GET("/tipo-clientes", h.TipoClienteHandler.GetTipoClientes)
-		api.GET("/tipo-clientes/buscar", h.TipoClienteHandler.SearchTipoClientes)
-		api.GET("/tipo-clientes/:id", h.TipoClienteHandler.GetTipoClienteById)
-		api.PUT("/tipo-clientes", h.TipoClienteHandler.UpdateTipoCliente)
-		api.DELETE("/tipo-clientes", h.TipoClienteHandler.DeleteTipoCliente)
-		api.PUT("/tipo-clientes/toggle", h.TipoClienteHandler.ToggleTipoClienteEstado)
+		protected.POST("/tipo-clientes", h.TipoClienteHandler.CreateTipoCliente)
+		protected.GET("/tipo-clientes", h.TipoClienteHandler.GetTipoClientes)
+		protected.GET("/tipo-clientes/buscar", h.TipoClienteHandler.SearchTipoClientes)
+		protected.GET("/tipo-clientes/:id", h.TipoClienteHandler.GetTipoClienteById)
+		protected.PUT("/tipo-clientes", h.TipoClienteHandler.UpdateTipoCliente)
+		protected.DELETE("/tipo-clientes", h.TipoClienteHandler.DeleteTipoCliente)
+		protected.PUT("/tipo-clientes/toggle", h.TipoClienteHandler.ToggleTipoClienteEstado)
 
 		// RECEPCIONISTAS
-		api.POST("/recepcionistas", h.RecepcionistaHandler.CreateRecepcionista)
-		api.GET("/recepcionistas", h.RecepcionistaHandler.GetRecepcionistas)
-		api.GET("/recepcionistas/buscar", h.RecepcionistaHandler.SearchRecepcionistas)
-		api.GET("/recepcionistas/:cedula", h.RecepcionistaHandler.GetRecepcionistaByCedula)
-		api.PUT("/recepcionistas", h.RecepcionistaHandler.UpdateRecepcionista)
-		api.DELETE("/recepcionistas", h.RecepcionistaHandler.DeleteRecepcionista)
-		api.PUT("/recepcionistas/toggle", h.RecepcionistaHandler.ToggleRecepcionistaEstado)
-
+		protected.POST("/recepcionistas", h.RecepcionistaHandler.CreateRecepcionista)
+		protected.GET("/recepcionistas", h.RecepcionistaHandler.GetRecepcionistas)
+		protected.GET("/recepcionistas/buscar", h.RecepcionistaHandler.SearchRecepcionistas)
+		protected.GET("/recepcionistas/:cedula", h.RecepcionistaHandler.GetRecepcionistaByCedula)
+		protected.PUT("/recepcionistas", h.RecepcionistaHandler.UpdateRecepcionista)
+		protected.DELETE("/recepcionistas", h.RecepcionistaHandler.DeleteRecepcionista)
+		protected.PUT("/recepcionistas/toggle", h.RecepcionistaHandler.ToggleRecepcionistaEstado)
 	}
 }

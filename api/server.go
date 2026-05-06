@@ -1,10 +1,9 @@
 package api
 
 import (
-	"time"
-
 	"reserva-backend/api/handlers"
 	"reserva-backend/dto"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	cors "github.com/itsjamie/gin-cors"
@@ -21,29 +20,35 @@ func NewServer(dbtx *dto.Queries) (*Server, error) {
 		dbtx: dbtx,
 	}
 
+	// HANDLERS
 	userHandler := handlers.NewUserHandler(dbtx)
 	authHandler := handlers.NewAuthHandler(dbtx)
 	reservaHandler := handlers.NewReservaHandler(dbtx)
+	detalleReservaHandler := handlers.NewDetalleReservaHandler(dbtx)
+	tarifaHandler := handlers.NewTarifaHandler(dbtx)
 	clienteHandler := handlers.NewClienteHandler(dbtx)
 	tipoClienteHandler := handlers.NewTipoClienteHandler(dbtx)
 	recepcionistaHandler := handlers.NewRecepcionistaHandler(dbtx)
 
+	// ROUTER
 	router := gin.Default()
 
 	router.Use(cors.Middleware(cors.Config{
 		Origins:        "*",
-		Methods:        "GET,POST,PUT,DELETE",
+		Methods:        "GET,POST,PUT,DELETE,PATCH",
 		RequestHeaders: "Origin,Authorization,Content-Type",
 		MaxAge:         50 * time.Second,
 	}))
 
 	SetupRoutes(router, Handlers{
-		UserHandler:          userHandler,
-		AuthHandler:          authHandler,
-		ReservaHandler:       reservaHandler,
-		ClienteHandler:       clienteHandler,
-		TipoClienteHandler:   tipoClienteHandler,
-		RecepcionistaHandler: recepcionistaHandler,
+		UserHandler:           userHandler,
+		AuthHandler:           authHandler,
+		ReservaHandler:        reservaHandler,
+		DetalleReservaHandler: detalleReservaHandler,
+		TarifaHandler:         tarifaHandler,
+		ClienteHandler:        clienteHandler,
+		TipoClienteHandler:    tipoClienteHandler,
+		RecepcionistaHandler:  recepcionistaHandler,
 	})
 
 	server.router = router
