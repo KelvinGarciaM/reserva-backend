@@ -17,6 +17,8 @@ type Handlers struct {
 	ClienteHandler        *handlers.ClienteHandler
 	TipoClienteHandler    *handlers.TipoClienteHandler
 	RecepcionistaHandler  *handlers.RecepcionistaHandler
+	TipoHabitacionHandler *handlers.TipoHabitacionHandler
+	HabitacionHandler     *handlers.HabitacionHandler
 }
 
 func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
@@ -94,5 +96,20 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 		protected.PUT("/recepcionistas", h.RecepcionistaHandler.UpdateRecepcionista)
 		protected.DELETE("/recepcionistas", h.RecepcionistaHandler.DeleteRecepcionista)
 		protected.PUT("/recepcionistas/toggle", h.RecepcionistaHandler.ToggleRecepcionistaEstado)
+
+		// TIPO HABITACION
+		protected.POST("/tipo-habitacion", h.TipoHabitacionHandler.RegisterTipoHabitacion)
+		protected.GET("/tipo-habitacion", h.TipoHabitacionHandler.GetTipoHabitacion)
+		protected.GET("/tipo-habitacion/:id", h.TipoHabitacionHandler.GetTipoHabitacionByID)
+		protected.PUT("/tipo-habitacion/:id", h.TipoHabitacionHandler.UpdateTipoHabitacion)
+		protected.DELETE("/tipo-habitacion/:id", h.TipoHabitacionHandler.DeleteTipoHabitacion)
+
+		// HABITACION
+		protected.POST("/habitacion", h.HabitacionHandler.RegisterHabitacion)
+		protected.GET("/habitacion", h.HabitacionHandler.GetHabitaciones)
+		protected.GET("/habitacion/:id", h.HabitacionHandler.GetHabitacionByID)
+		protected.GET("/habitacion/tipo/:id", h.HabitacionHandler.GetHabitacionesByTipoHab)
+		protected.PUT("/habitacion/:id", h.HabitacionHandler.UpdateHabitacion)
+		protected.DELETE("/habitacion/:id", h.HabitacionHandler.DeleteHabitacion)
 	}
 }

@@ -38,6 +38,8 @@ func NewServer(dbtx *dto.Queries, secret string) (*Server, error) {
 	clienteHandler := handlers.NewClienteHandler(dbtx)
 	tipoClienteHandler := handlers.NewTipoClienteHandler(dbtx)
 	recepcionistaHandler := handlers.NewRecepcionistaHandler(dbtx)
+	tipoHabitacionHandler := handlers.NewTipoHabitacionHandler(dbtx)
+	habitacionHandler := handlers.NewHabitacionHandler(dbtx)
 
 	// ROUTER
 	router := gin.Default()
@@ -59,8 +61,9 @@ func NewServer(dbtx *dto.Queries, secret string) (*Server, error) {
 		ClienteHandler:        clienteHandler,
 		TipoClienteHandler:    tipoClienteHandler,
 		RecepcionistaHandler:  recepcionistaHandler,
+		TipoHabitacionHandler: tipoHabitacionHandler,
+		HabitacionHandler:     habitacionHandler,
 	}, builder)
-
 	server.router = router
 	return server, nil
 }
