@@ -21,13 +21,11 @@ func NewHabitacionHandler(q *dto.Queries) *HabitacionHandler {
 type registerHabitacionRequest struct {
 	IdTipoHab        int32  `json:"idTipoHab" binding:"required"`
 	NumeroHabitacion string `json:"numeroHabitacion" binding:"required"`
-	EstadoHabitacion string `json:"estadoHabitacion" binding:"required"`
 }
 
 type updateHabitacionRequest struct {
 	IdTipoHab        int32  `json:"idTipoHab" binding:"required"`
 	NumeroHabitacion string `json:"numeroHabitacion" binding:"required"`
-	EstadoHabitacion string `json:"estadoHabitacion" binding:"required"`
 	Estado           int8   `json:"estado"`
 }
 
@@ -53,7 +51,6 @@ func (h *HabitacionHandler) RegisterHabitacion(c *gin.Context) {
 	args := dto.CreateHabitacionParams{
 		Idtipohab:        req.IdTipoHab,
 		Numerohabitacion: req.NumeroHabitacion,
-		Estadohabitacion: req.EstadoHabitacion,
 	}
 	result, err := h.q.CreateHabitacion(c, args)
 	if err != nil {
@@ -122,7 +119,6 @@ func (h *HabitacionHandler) UpdateHabitacion(c *gin.Context) {
 	args := dto.UpdateHabitacionParams{
 		Idtipohab:        req.IdTipoHab,
 		Numerohabitacion: req.NumeroHabitacion,
-		Estadohabitacion: req.EstadoHabitacion,
 		Estado:           req.Estado,
 		Idhabitacion:     id,
 	}

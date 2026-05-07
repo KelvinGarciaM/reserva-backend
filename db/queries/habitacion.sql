@@ -1,21 +1,21 @@
 -- name: CreateHabitacion :execresult
-INSERT INTO Habitacion (idTipoHab, numeroHabitacion, estadoHabitacion)
-VALUES (?, ?, ?);
+INSERT INTO Habitacion (idTipoHab, numeroHabitacion)
+VALUES (?, ?);
 -- name: GetHabitacionById :one
-SELECT idHabitacion, idTipoHab, numeroHabitacion, estadoHabitacion, estado
+SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
 WHERE idHabitacion = ? AND estado = 1;
 -- name: GetHabitacionesByTipo :many
-SELECT idHabitacion, idTipoHab, numeroHabitacion, estadoHabitacion, estado
+SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
 WHERE idTipoHab = ? AND estado = 1;
 -- name: GetHabitaciones :many
-SELECT idHabitacion, idTipoHab, numeroHabitacion, estadoHabitacion, estado
+SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
 WHERE estado = 1;
 -- name: UpdateHabitacion :execresult
 UPDATE Habitacion
-SET idTipoHab = ?, numeroHabitacion = ?, estadoHabitacion = ?, estado = ?
+SET idTipoHab = ?, numeroHabitacion = ?, estado = ?
 WHERE idHabitacion = ?;
 -- name: updateEstadoHabitacion :execresult
 UPDATE Habitacion

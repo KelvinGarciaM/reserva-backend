@@ -11,18 +11,17 @@ import (
 )
 
 const createHabitacion = `-- name: CreateHabitacion :execresult
-INSERT INTO Habitacion (idTipoHab, numeroHabitacion, estadoHabitacion)
-VALUES (?, ?, ?)
+INSERT INTO Habitacion (idTipoHab, numeroHabitacion)
+VALUES (?, ?)
 `
 
 type CreateHabitacionParams struct {
 	Idtipohab        int32  `json:"idtipohab"`
 	Numerohabitacion string `json:"numerohabitacion"`
-	Estadohabitacion string `json:"estadohabitacion"`
 }
 
 func (q *Queries) CreateHabitacion(ctx context.Context, arg CreateHabitacionParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createHabitacion, arg.Idtipohab, arg.Numerohabitacion, arg.Estadohabitacion)
+	return q.db.ExecContext(ctx, createHabitacion, arg.Idtipohab, arg.Numerohabitacion)
 }
 
 const deleteHabitacion = `-- name: DeleteHabitacion :execresult
@@ -36,7 +35,7 @@ func (q *Queries) DeleteHabitacion(ctx context.Context, idhabitacion int32) (sql
 }
 
 const getHabitacionById = `-- name: GetHabitacionById :one
-SELECT idHabitacion, idTipoHab, numeroHabitacion, estadoHabitacion, estado
+SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
 WHERE idHabitacion = ? AND estado = 1
 `
@@ -48,14 +47,13 @@ func (q *Queries) GetHabitacionById(ctx context.Context, idhabitacion int32) (Ha
 		&i.Idhabitacion,
 		&i.Idtipohab,
 		&i.Numerohabitacion,
-		&i.Estadohabitacion,
 		&i.Estado,
 	)
 	return i, err
 }
 
 const getHabitaciones = `-- name: GetHabitaciones :many
-SELECT idHabitacion, idTipoHab, numeroHabitacion, estadoHabitacion, estado
+SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
 WHERE estado = 1
 `
@@ -73,7 +71,6 @@ func (q *Queries) GetHabitaciones(ctx context.Context) ([]Habitacion, error) {
 			&i.Idhabitacion,
 			&i.Idtipohab,
 			&i.Numerohabitacion,
-			&i.Estadohabitacion,
 			&i.Estado,
 		); err != nil {
 			return nil, err
@@ -90,7 +87,7 @@ func (q *Queries) GetHabitaciones(ctx context.Context) ([]Habitacion, error) {
 }
 
 const getHabitacionesByTipo = `-- name: GetHabitacionesByTipo :many
-SELECT idHabitacion, idTipoHab, numeroHabitacion, estadoHabitacion, estado
+SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
 WHERE idTipoHab = ? AND estado = 1
 `
@@ -108,7 +105,6 @@ func (q *Queries) GetHabitacionesByTipo(ctx context.Context, idtipohab int32) ([
 			&i.Idhabitacion,
 			&i.Idtipohab,
 			&i.Numerohabitacion,
-			&i.Estadohabitacion,
 			&i.Estado,
 		); err != nil {
 			return nil, err
@@ -126,14 +122,13 @@ func (q *Queries) GetHabitacionesByTipo(ctx context.Context, idtipohab int32) ([
 
 const updateHabitacion = `-- name: UpdateHabitacion :execresult
 UPDATE Habitacion
-SET idTipoHab = ?, numeroHabitacion = ?, estadoHabitacion = ?, estado = ?
+SET idTipoHab = ?, numeroHabitacion = ?, estado = ?
 WHERE idHabitacion = ?
 `
 
 type UpdateHabitacionParams struct {
 	Idtipohab        int32  `json:"idtipohab"`
 	Numerohabitacion string `json:"numerohabitacion"`
-	Estadohabitacion string `json:"estadohabitacion"`
 	Estado           int8   `json:"estado"`
 	Idhabitacion     int32  `json:"idhabitacion"`
 }
@@ -142,7 +137,6 @@ func (q *Queries) UpdateHabitacion(ctx context.Context, arg UpdateHabitacionPara
 	return q.db.ExecContext(ctx, updateHabitacion,
 		arg.Idtipohab,
 		arg.Numerohabitacion,
-		arg.Estadohabitacion,
 		arg.Estado,
 		arg.Idhabitacion,
 	)
