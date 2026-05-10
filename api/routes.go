@@ -37,79 +37,99 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 	}
 
 	// =========================
-	// PROTECTED
+	// PROTECTED (requiere autenticación)
 	// =========================
 	protected := r.Group("/api/v1")
 	protected.Use(middleware.AuthMiddleware(builder))
 	{
-		// USERS
-		protected.GET("/users", h.UserHandler.GetUsers)
-		protected.GET("/users/:email", h.UserHandler.GetUserByEmail)
-		protected.PUT("/users", h.UserHandler.UpdateUser)
-		protected.DELETE("/users", h.UserHandler.DeleteUser)
+		// ========== SOLO ADMIN ==========
+		admin := protected.Group("/")
+		admin.Use(middleware.RoleMiddleware("Administrador"))
+		{
+			// USERS - solo admin puede modificar/eliminar
+			admin.PUT("/users", h.UserHandler.UpdateUser)
+			admin.DELETE("/users", h.UserHandler.DeleteUser)
 
-		// RESERVAS
-		protected.POST("/reservas", h.ReservaHandler.Register)
-		protected.GET("/reservas", h.ReservaHandler.GetReservas)
-		protected.GET("/reservas/:id", h.ReservaHandler.GetReservaById)
-		protected.GET("/reservas/cliente/:id", h.ReservaHandler.GetReservasByCliente)
-		protected.GET("/reservas/recepcionista/:id", h.ReservaHandler.GetReservasByRecepcionista)
-		protected.PUT("/reservas/:id", h.ReservaHandler.UpdateReserva)
-		protected.DELETE("/reservas/:id", h.ReservaHandler.DeleteReserva)
+			// TARIFAS - solo admin puede crear/editar/eliminar
+			admin.POST("/tarifas", h.TarifaHandler.CreateTarifa)
+			admin.PATCH("/tarifas/:idTarifa", h.TarifaHandler.UpdateTarifa)
+			admin.DELETE("/tarifas/:idTarifa", h.TarifaHandler.DeleteTarifa)
 
-		// DETALLE RESERVA
-		protected.POST("/detalles-reserva", h.DetalleReservaHandler.CreateDetalleReserva)
-		protected.GET("/detalles-reserva", h.DetalleReservaHandler.GetAllDetalleReserva)
-		protected.GET("/detalles-reserva/:idDetalleReserva", h.DetalleReservaHandler.GetDetalleReservaById)
-		protected.PATCH("/detalles-reserva/:idDetalleReserva", h.DetalleReservaHandler.UpdateDetalleReserva)
-		protected.DELETE("/detalles-reserva/:idDetalleReserva", h.DetalleReservaHandler.DeleteDetalleReserva)
+			// TIPO CLIENTES - solo admin puede crear/editar/eliminar
+			admin.POST("/tipos-cliente", h.TipoClienteHandler.CreateTipoCliente)
+			admin.PUT("/tipos-cliente", h.TipoClienteHandler.UpdateTipoCliente)
+			admin.DELETE("/tipos-cliente", h.TipoClienteHandler.DeleteTipoCliente)
+			admin.PUT("/tipos-cliente/toggle", h.TipoClienteHandler.ToggleTipoClienteEstado)
 
-		// TARIFAS ADMIN
-		protected.POST("/tarifas", h.TarifaHandler.CreateTarifa)
-		protected.PATCH("/tarifas/:idTarifa", h.TarifaHandler.UpdateTarifa)
-		protected.DELETE("/tarifas/:idTarifa", h.TarifaHandler.DeleteTarifa)
+			// RECEPCIONISTAS - solo admin puede crear/editar/eliminar
+			admin.POST("/recepcionistas", h.RecepcionistaHandler.CreateRecepcionista)
+			admin.PUT("/recepcionistas", h.RecepcionistaHandler.UpdateRecepcionista)
+			admin.DELETE("/recepcionistas", h.RecepcionistaHandler.DeleteRecepcionista)
+			admin.PUT("/recepcionistas/toggle", h.RecepcionistaHandler.ToggleRecepcionistaEstado)
 
-		// CLIENTES
-		protected.POST("/clientes", h.ClienteHandler.RegisterCliente)
-		protected.GET("/clientes", h.ClienteHandler.GetClientes)
-		protected.GET("/clientes/buscar", h.ClienteHandler.SearchClientes)
-		protected.GET("/clientes/tipo/:idtipocliente", h.ClienteHandler.GetClientesByTipoCliente)
-		protected.GET("/clientes/:cedula", h.ClienteHandler.GetClienteByCedula)
-		protected.PUT("/clientes", h.ClienteHandler.UpdateCliente)
-		protected.DELETE("/clientes", h.ClienteHandler.DeleteCliente)
-		protected.PUT("/clientes/toggle", h.ClienteHandler.ToggleClienteEstado)
+			// TIPO HABITACION - solo admin puede crear/editar/eliminar
+			admin.POST("/tipos-habitacion", h.TipoHabitacionHandler.RegisterTipoHabitacion)
+			admin.PUT("/tipos-habitacion/:id", h.TipoHabitacionHandler.UpdateTipoHabitacion)
+			admin.DELETE("/tipos-habitacion/:id", h.TipoHabitacionHandler.DeleteTipoHabitacion)
 
-		// TIPO CLIENTES
-		protected.POST("/tipos-cliente", h.TipoClienteHandler.CreateTipoCliente)
-		protected.GET("/tipos-cliente", h.TipoClienteHandler.GetTipoClientes)
-		protected.GET("/tipos-cliente/buscar", h.TipoClienteHandler.SearchTipoClientes)
-		protected.GET("/tipos-cliente/:id", h.TipoClienteHandler.GetTipoClienteById)
-		protected.PUT("/tipos-cliente", h.TipoClienteHandler.UpdateTipoCliente)
-		protected.DELETE("/tipos-cliente", h.TipoClienteHandler.DeleteTipoCliente)
-		protected.PUT("/tipos-cliente/toggle", h.TipoClienteHandler.ToggleTipoClienteEstado)
+			// HABITACIONES - solo admin puede crear/editar/eliminar
+			admin.POST("/habitaciones", h.HabitacionHandler.RegisterHabitacion)
+			admin.PUT("/habitaciones/:id", h.HabitacionHandler.UpdateHabitacion)
+			admin.DELETE("/habitaciones/:id", h.HabitacionHandler.DeleteHabitacion)
+		}
 
-		// RECEPCIONISTAS
-		protected.POST("/recepcionistas", h.RecepcionistaHandler.CreateRecepcionista)
-		protected.GET("/recepcionistas", h.RecepcionistaHandler.GetRecepcionistas)
-		protected.GET("/recepcionistas/buscar", h.RecepcionistaHandler.SearchRecepcionistas)
-		protected.GET("/recepcionistas/:cedula", h.RecepcionistaHandler.GetRecepcionistaByCedula)
-		protected.PUT("/recepcionistas", h.RecepcionistaHandler.UpdateRecepcionista)
-		protected.DELETE("/recepcionistas", h.RecepcionistaHandler.DeleteRecepcionista)
-		protected.PUT("/recepcionistas/toggle", h.RecepcionistaHandler.ToggleRecepcionistaEstado)
+		// ========== ADMIN + RECEPCIONISTA ==========
+		staff := protected.Group("/")
+		staff.Use(middleware.RoleMiddleware("Administrador", "Recepcionista"))
+		{
+			// USERS - solo lectura
+			staff.GET("/users", h.UserHandler.GetUsers)
+			staff.GET("/users/:email", h.UserHandler.GetUserByEmail)
 
-		// TIPO HABITACION
-		protected.POST("/tipos-habitacion", h.TipoHabitacionHandler.RegisterTipoHabitacion)
-		protected.GET("/tipos-habitacion", h.TipoHabitacionHandler.GetTipoHabitacion)
-		protected.GET("/tipos-habitacion/:id", h.TipoHabitacionHandler.GetTipoHabitacionByID)
-		protected.PUT("/tipos-habitacion/:id", h.TipoHabitacionHandler.UpdateTipoHabitacion)
-		protected.DELETE("/tipos-habitacion/:id", h.TipoHabitacionHandler.DeleteTipoHabitacion)
+			// RESERVAS
+			staff.POST("/reservas", h.ReservaHandler.Register)
+			staff.GET("/reservas", h.ReservaHandler.GetReservas)
+			staff.GET("/reservas/:id", h.ReservaHandler.GetReservaById)
+			staff.GET("/reservas/cliente/:id", h.ReservaHandler.GetReservasByCliente)
+			staff.GET("/reservas/recepcionista/:id", h.ReservaHandler.GetReservasByRecepcionista)
+			staff.PUT("/reservas/:id", h.ReservaHandler.UpdateReserva)
+			staff.DELETE("/reservas/:id", h.ReservaHandler.DeleteReserva)
 
-		// HABITACION
-		protected.POST("/habitaciones", h.HabitacionHandler.RegisterHabitacion)
-		protected.GET("/habitaciones", h.HabitacionHandler.GetHabitaciones)
-		protected.GET("/habitaciones/:id", h.HabitacionHandler.GetHabitacionByID)
-		protected.GET("/habitaciones/tipo/:id", h.HabitacionHandler.GetHabitacionesByTipoHab)
-		protected.PUT("/habitaciones/:id", h.HabitacionHandler.UpdateHabitacion)
-		protected.DELETE("/habitaciones/:id", h.HabitacionHandler.DeleteHabitacion)
+			// DETALLE RESERVA
+			staff.POST("/detalles-reserva", h.DetalleReservaHandler.CreateDetalleReserva)
+			staff.GET("/detalles-reserva", h.DetalleReservaHandler.GetAllDetalleReserva)
+			staff.GET("/detalles-reserva/:idDetalleReserva", h.DetalleReservaHandler.GetDetalleReservaById)
+			staff.PATCH("/detalles-reserva/:idDetalleReserva", h.DetalleReservaHandler.UpdateDetalleReserva)
+			staff.DELETE("/detalles-reserva/:idDetalleReserva", h.DetalleReservaHandler.DeleteDetalleReserva)
+
+			// CLIENTES
+			staff.POST("/clientes", h.ClienteHandler.RegisterCliente)
+			staff.GET("/clientes", h.ClienteHandler.GetClientes)
+			staff.GET("/clientes/buscar", h.ClienteHandler.SearchClientes)
+			staff.GET("/clientes/tipo/:idtipocliente", h.ClienteHandler.GetClientesByTipoCliente)
+			staff.GET("/clientes/:cedula", h.ClienteHandler.GetClienteByCedula)
+			staff.PUT("/clientes", h.ClienteHandler.UpdateCliente)
+			staff.DELETE("/clientes", h.ClienteHandler.DeleteCliente)
+			staff.PUT("/clientes/toggle", h.ClienteHandler.ToggleClienteEstado)
+
+			// TIPO CLIENTES - solo lectura
+			staff.GET("/tipos-cliente", h.TipoClienteHandler.GetTipoClientes)
+			staff.GET("/tipos-cliente/buscar", h.TipoClienteHandler.SearchTipoClientes)
+			staff.GET("/tipos-cliente/:id", h.TipoClienteHandler.GetTipoClienteById)
+
+			// RECEPCIONISTAS - solo lectura
+			staff.GET("/recepcionistas", h.RecepcionistaHandler.GetRecepcionistas)
+			staff.GET("/recepcionistas/buscar", h.RecepcionistaHandler.SearchRecepcionistas)
+			staff.GET("/recepcionistas/:cedula", h.RecepcionistaHandler.GetRecepcionistaByCedula)
+
+			// TIPO HABITACION - solo lectura
+			staff.GET("/tipos-habitacion", h.TipoHabitacionHandler.GetTipoHabitacion)
+			staff.GET("/tipos-habitacion/:id", h.TipoHabitacionHandler.GetTipoHabitacionByID)
+
+			// HABITACIONES - solo lectura
+			staff.GET("/habitaciones", h.HabitacionHandler.GetHabitaciones)
+			staff.GET("/habitaciones/:id", h.HabitacionHandler.GetHabitacionByID)
+			staff.GET("/habitaciones/tipo/:id", h.HabitacionHandler.GetHabitacionesByTipoHab)
+		}
 	}
 }
