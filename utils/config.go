@@ -8,6 +8,11 @@ type Config struct {
 	ServerURL         string `mapstructure:"SERVER_URL"`
 	API               string `mapstructure:"API_VERSION"`
 	TokenSymmetricKey string `mapstructure:"TOKEN_SYMMETRIC_KEY"`
+	//Usuario quemado
+	AdminName     string `mapstructure:"ADMIN_NAME"`
+	AdminEmail    string `mapstructure:"ADMIN_EMAIL"`
+	AdminPassword string `mapstructure:"ADMIN_PASSWORD"`
+	AdminRole     string `mapstructure:"ADMIN_ROLE"`
 }
 
 func LoadConfig(path string) (config Config, err error) {

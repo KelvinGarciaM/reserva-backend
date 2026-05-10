@@ -40,6 +40,19 @@ type deleteDetalleReservaRequest struct {
 
 const cantidaMaximaNoches = 30
 
+// CreateDetalleReserva godoc
+// @Summary Crear detalle de reserva
+// @Description Registra un nuevo detalle de reserva con cálculos de precios, impuestos y descuentos
+// @Tags detalles-reserva
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param detalle body createDetalleReservaRequest true "Datos del detalle de reserva"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /detalles-reserva [post]
 func (d *DetalleReservaHandler) CreateDetalleReserva(ctx *gin.Context) {
 
 	var req createDetalleReservaRequest
@@ -223,6 +236,19 @@ func fechaActual() (time.Time, error) {
 		0, 0, 0, 0, hoy.Location()), nil
 }
 
+// GetDetalleReservaById godoc
+// @Summary Obtener detalle de reserva por ID
+// @Description Busca un detalle de reserva por su ID
+// @Tags detalles-reserva
+// @Produce json
+// @Security BearerAuth
+// @Param idDetalleReserva path int true "ID del detalle de reserva"
+// @Success 200 {object} detalleReservaResponse
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /detalles-reserva/{idDetalleReserva} [get]
 func (d *DetalleReservaHandler) GetDetalleReservaById(ctx *gin.Context) {
 
 	idStr := ctx.Param("idDetalleReserva")
@@ -306,6 +332,16 @@ func newDetalleReservaResponse(d dto.GetAllDetalleReservaRow) detalleReservaResp
 	}
 }
 
+// GetAllDetalleReserva godoc
+// @Summary Obtener todos los detalles de reserva
+// @Description Devuelve la lista completa de detalles de reserva
+// @Tags detalles-reserva
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} detalleReservaResponse
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /detalles-reserva [get]
 func (t *DetalleReservaHandler) GetAllDetalleReserva(ctx *gin.Context) {
 
 	detallesReserva, err := t.q.GetAllDetalleReserva(ctx)
@@ -321,6 +357,21 @@ func (t *DetalleReservaHandler) GetAllDetalleReserva(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
+// UpdateDetalleReserva godoc
+// @Summary Actualizar detalle de reserva
+// @Description Actualiza los datos de un detalle de reserva existente
+// @Tags detalles-reserva
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param idDetalleReserva path int true "ID del detalle de reserva"
+// @Param detalle body updateDetalleReservaRequest true "Datos a actualizar"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /detalles-reserva/{idDetalleReserva} [put]
 func (d *DetalleReservaHandler) UpdateDetalleReserva(ctx *gin.Context) {
 
 	var req updateDetalleReservaRequest
@@ -544,6 +595,18 @@ func (d *DetalleReservaHandler) UpdateDetalleReserva(ctx *gin.Context) {
 		"rows affected": rows})
 }
 
+// DeleteDetalleReserva godoc
+// @Summary Eliminar/Activar detalle de reserva (soft delete)
+// @Description Cambia el estado del detalle de reserva (activo/inactivo)
+// @Tags detalles-reserva
+// @Produce json
+// @Security BearerAuth
+// @Param idDetalleReserva path int true "ID del detalle de reserva"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /detalles-reserva/{idDetalleReserva} [delete]
 func (d *DetalleReservaHandler) DeleteDetalleReserva(ctx *gin.Context) {
 
 	var idDetalleReservaStr = ctx.Param("idDetalleReserva")

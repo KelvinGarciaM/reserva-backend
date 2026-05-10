@@ -37,6 +37,19 @@ type deleteTarifaRequest struct {
 	idTarifa int32 `json:"idTarifa" binding:"required"`
 }
 
+// CreateTarifa godoc
+// @Summary Crear tarifa
+// @Description Registra una nueva tarifa para un tipo de habitación
+// @Tags tarifas
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param tarifa body createTarifaRequest true "Datos de la tarifa"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tarifas [post]
 func (t *TarifaHandler) CreateTarifa(ctx *gin.Context) {
 
 	var req createTarifaRequest
@@ -106,6 +119,16 @@ func newTarifaByNombreResponse(t dto.GetTarifaByNombreRow) tarifaResponse {
 	}
 }
 
+// GetTarifas godoc
+// @Summary Obtener todas las tarifas
+// @Description Devuelve la lista completa de tarifas
+// @Tags tarifas
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} tarifaResponse
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tarifas [get]
 func (t *TarifaHandler) GetTarifas(ctx *gin.Context) {
 
 	tarifas, err := t.q.GetTarifas(ctx)
@@ -121,6 +144,18 @@ func (t *TarifaHandler) GetTarifas(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
+// GetTarifaByNombre godoc
+// @Summary Obtener tarifa por nombre
+// @Description Busca una tarifa por su nombre
+// @Tags tarifas
+// @Produce json
+// @Security BearerAuth
+// @Param nombreTarifa path string true "Nombre de la tarifa"
+// @Success 200 {object} tarifaResponse
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tarifas/{nombreTarifa} [get]
 func (t *TarifaHandler) GetTarifaByNombre(ctx *gin.Context) {
 
 	nombre := ctx.Param("nombreTarifa")
@@ -135,6 +170,20 @@ func (t *TarifaHandler) GetTarifaByNombre(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
+// UpdateTarifa godoc
+// @Summary Actualizar tarifa
+// @Description Actualiza los datos de una tarifa existente
+// @Tags tarifas
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param idTarifa path int true "ID de la tarifa"
+// @Param tarifa body UpdateTarifaRequest true "Datos a actualizar"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tarifas/{idTarifa} [patch]
 func (t *TarifaHandler) UpdateTarifa(ctx *gin.Context) {
 
 	var req UpdateTarifaRequest
@@ -193,6 +242,18 @@ func (t *TarifaHandler) UpdateTarifa(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"filas afectadas": fila})
 }
 
+// DeleteTarifa godoc
+// @Summary Eliminar tarifa
+// @Description Elimina una tarifa del sistema (soft delete)
+// @Tags tarifas
+// @Produce json
+// @Security BearerAuth
+// @Param idTarifa path int true "ID de la tarifa"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tarifas/{idTarifa} [delete]
 func (t *TarifaHandler) DeleteTarifa(ctx *gin.Context) {
 
 	var idTarifaS = ctx.Param("idTarifa")

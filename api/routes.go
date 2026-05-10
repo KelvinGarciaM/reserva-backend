@@ -58,11 +58,11 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 		protected.DELETE("/reservas/:id", h.ReservaHandler.DeleteReserva)
 
 		// DETALLE RESERVA
-		protected.POST("/detallereservas", h.DetalleReservaHandler.CreateDetalleReserva)
-		protected.GET("/detallereservas", h.DetalleReservaHandler.GetAllDetalleReserva)
-		protected.GET("/detallereservas/:idDetalleReserva", h.DetalleReservaHandler.GetDetalleReservaById)
-		protected.PATCH("/detallereservas/:idDetalleReserva", h.DetalleReservaHandler.UpdateDetalleReserva)
-		protected.DELETE("/detallereservas/:idDetalleReserva", h.DetalleReservaHandler.DeleteDetalleReserva)
+		protected.POST("/detalles-reserva", h.DetalleReservaHandler.CreateDetalleReserva)
+		protected.GET("/detalles-reserva", h.DetalleReservaHandler.GetAllDetalleReserva)
+		protected.GET("/detalles-reserva/:idDetalleReserva", h.DetalleReservaHandler.GetDetalleReservaById)
+		protected.PATCH("/detalles-reserva/:idDetalleReserva", h.DetalleReservaHandler.UpdateDetalleReserva)
+		protected.DELETE("/detalles-reserva/:idDetalleReserva", h.DetalleReservaHandler.DeleteDetalleReserva)
 
 		// TARIFAS ADMIN
 		protected.POST("/tarifas", h.TarifaHandler.CreateTarifa)
@@ -80,13 +80,13 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 		protected.PUT("/clientes/toggle", h.ClienteHandler.ToggleClienteEstado)
 
 		// TIPO CLIENTES
-		protected.POST("/tipo-clientes", h.TipoClienteHandler.CreateTipoCliente)
-		protected.GET("/tipo-clientes", h.TipoClienteHandler.GetTipoClientes)
-		protected.GET("/tipo-clientes/buscar", h.TipoClienteHandler.SearchTipoClientes)
-		protected.GET("/tipo-clientes/:id", h.TipoClienteHandler.GetTipoClienteById)
-		protected.PUT("/tipo-clientes", h.TipoClienteHandler.UpdateTipoCliente)
-		protected.DELETE("/tipo-clientes", h.TipoClienteHandler.DeleteTipoCliente)
-		protected.PUT("/tipo-clientes/toggle", h.TipoClienteHandler.ToggleTipoClienteEstado)
+		protected.POST("/tipos-cliente", h.TipoClienteHandler.CreateTipoCliente)
+		protected.GET("/tipos-cliente", h.TipoClienteHandler.GetTipoClientes)
+		protected.GET("/tipos-cliente/buscar", h.TipoClienteHandler.SearchTipoClientes)
+		protected.GET("/tipos-cliente/:id", h.TipoClienteHandler.GetTipoClienteById)
+		protected.PUT("/tipos-cliente", h.TipoClienteHandler.UpdateTipoCliente)
+		protected.DELETE("/tipos-cliente", h.TipoClienteHandler.DeleteTipoCliente)
+		protected.PUT("/tipos-cliente/toggle", h.TipoClienteHandler.ToggleTipoClienteEstado)
 
 		// RECEPCIONISTAS
 		protected.POST("/recepcionistas", h.RecepcionistaHandler.CreateRecepcionista)
@@ -98,18 +98,18 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 		protected.PUT("/recepcionistas/toggle", h.RecepcionistaHandler.ToggleRecepcionistaEstado)
 
 		// TIPO HABITACION
-		protected.POST("/tipo-habitacion", h.TipoHabitacionHandler.RegisterTipoHabitacion)
-		protected.GET("/tipo-habitacion", h.TipoHabitacionHandler.GetTipoHabitacion)
-		protected.GET("/tipo-habitacion/:id", h.TipoHabitacionHandler.GetTipoHabitacionByID)
-		protected.PUT("/tipo-habitacion/:id", h.TipoHabitacionHandler.UpdateTipoHabitacion)
-		protected.DELETE("/tipo-habitacion/:id", h.TipoHabitacionHandler.DeleteTipoHabitacion)
+		protected.POST("/tipos-habitacion", h.TipoHabitacionHandler.RegisterTipoHabitacion)
+		protected.GET("/tipos-habitacion", h.TipoHabitacionHandler.GetTipoHabitacion)
+		protected.GET("/tipos-habitacion/:id", h.TipoHabitacionHandler.GetTipoHabitacionByID)
+		protected.PUT("/tipos-habitacion/:id", h.TipoHabitacionHandler.UpdateTipoHabitacion)
+		protected.DELETE("/tipos-habitacion/:id", h.TipoHabitacionHandler.DeleteTipoHabitacion)
 
 		// HABITACION
-		protected.POST("/habitacion", h.HabitacionHandler.RegisterHabitacion)
-		protected.GET("/habitacion", h.HabitacionHandler.GetHabitaciones)
-		protected.GET("/habitacion/:id", h.HabitacionHandler.GetHabitacionByID)
-		protected.GET("/habitacion/tipo/:id", h.HabitacionHandler.GetHabitacionesByTipoHab)
-		protected.PUT("/habitacion/:id", h.HabitacionHandler.UpdateHabitacion)
-		protected.DELETE("/habitacion/:id", h.HabitacionHandler.DeleteHabitacion)
+		protected.POST("/habitaciones", h.HabitacionHandler.RegisterHabitacion)
+		protected.GET("/habitaciones", h.HabitacionHandler.GetHabitaciones)
+		protected.GET("/habitaciones/:id", h.HabitacionHandler.GetHabitacionByID)
+		protected.GET("/habitaciones/tipo/:id", h.HabitacionHandler.GetHabitacionesByTipoHab)
+		protected.PUT("/habitaciones/:id", h.HabitacionHandler.UpdateHabitacion)
+		protected.DELETE("/habitaciones/:id", h.HabitacionHandler.DeleteHabitacion)
 	}
 }

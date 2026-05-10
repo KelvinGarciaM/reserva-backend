@@ -42,6 +42,19 @@ func getIDHabitacion(c *gin.Context) (int32, bool) {
 
 // Handler
 // Create
+// RegisterHabitacion godoc
+// @Summary Crear habitación
+// @Description Registra una nueva habitación en el sistema
+// @Tags habitaciones
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param habitacion body registerHabitacionRequest true "Datos de la habitación"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /habitaciones [post]
 func (h *HabitacionHandler) RegisterHabitacion(c *gin.Context) {
 	var req registerHabitacionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -65,6 +78,16 @@ func (h *HabitacionHandler) RegisterHabitacion(c *gin.Context) {
 }
 
 // Get All
+// GetHabitaciones godoc
+// @Summary Obtener todas las habitaciones
+// @Description Devuelve la lista completa de habitaciones
+// @Tags habitaciones
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /habitaciones [get]
 func (h *HabitacionHandler) GetHabitaciones(c *gin.Context) {
 	habitaciones, err := h.q.GetHabitaciones(c)
 	if err != nil {
@@ -75,6 +98,19 @@ func (h *HabitacionHandler) GetHabitaciones(c *gin.Context) {
 }
 
 // Get By ID
+// GetHabitacionByID godoc
+// @Summary Obtener habitación por ID
+// @Description Busca una habitación por su ID
+// @Tags habitaciones
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID de la habitación"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /habitaciones/{id} [get]
 func (h *HabitacionHandler) GetHabitacionByID(c *gin.Context) {
 	id, ok := getIDHabitacion(c)
 	if !ok {
@@ -90,6 +126,19 @@ func (h *HabitacionHandler) GetHabitacionByID(c *gin.Context) {
 }
 
 // Get By Tipo Hab
+// GetHabitacionesByTipoHab godoc
+// @Summary Obtener habitaciones por tipo
+// @Description Busca habitaciones por ID de tipo de habitación
+// @Tags habitaciones
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID del tipo de habitación"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /habitaciones/tipo/{id} [get]
 func (h *HabitacionHandler) GetHabitacionesByTipoHab(c *gin.Context) {
 	idP, ok := getIDHabitacion(c)
 	if !ok {
@@ -105,6 +154,21 @@ func (h *HabitacionHandler) GetHabitacionesByTipoHab(c *gin.Context) {
 }
 
 // Update
+// UpdateHabitacion godoc
+// @Summary Actualizar habitación
+// @Description Actualiza los datos de una habitación existente
+// @Tags habitaciones
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID de la habitación"
+// @Param habitacion body updateHabitacionRequest true "Datos a actualizar"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /habitaciones/{id} [put]
 func (h *HabitacionHandler) UpdateHabitacion(c *gin.Context) {
 	id, ok := getIDHabitacion(c)
 	if !ok {
@@ -140,6 +204,19 @@ func (h *HabitacionHandler) UpdateHabitacion(c *gin.Context) {
 }
 
 // DELETE LOGICO
+// DeleteHabitacion godoc
+// @Summary Eliminar habitación (soft delete)
+// @Description Cambia el estado de la habitación en vez de borrarla físicamente
+// @Tags habitaciones
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID de la habitación"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /habitaciones/{id} [delete]
 func (h *HabitacionHandler) DeleteHabitacion(c *gin.Context) {
 	id, ok := getIDHabitacion(c)
 	if !ok {

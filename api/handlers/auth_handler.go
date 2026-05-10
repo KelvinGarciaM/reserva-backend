@@ -52,7 +52,18 @@ type loginResponse struct {
 /* =========================
    LOGIN
 ========================= */
-
+// Login godoc
+// @Summary Iniciar sesión
+// @Description Autentica un usuario y retorna un token JWT
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param credentials body loginRequest true "Credenciales del usuario"
+// @Success 200 {object} loginResponse
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 
 	var req loginRequest

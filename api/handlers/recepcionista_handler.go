@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"reserva-backend/dto"
 
@@ -24,7 +23,7 @@ func NewRecepcionistaHandler(q *dto.Queries) *RecepcionistaHandler {
 ========================= */
 
 type createRecepcionistaRequest struct {
-	Cedula    int32  `json:"cedula" binding:"required"`
+	Cedula    string `json:"cedula" binding:"required"`
 	Nombre    string `json:"nombre" binding:"required"`
 	Apellidos string `json:"apellidos" binding:"required"`
 	Telefono  string `json:"telefono" binding:"required"`
@@ -32,7 +31,7 @@ type createRecepcionistaRequest struct {
 }
 
 type updateRecepcionistaRequest struct {
-	Cedula    int32  `json:"cedula" binding:"required"`
+	Cedula    string `json:"cedula" binding:"required"`
 	Nombre    string `json:"nombre" binding:"required"`
 	Apellidos string `json:"apellidos" binding:"required"`
 	Telefono  string `json:"telefono" binding:"required"`
@@ -41,13 +40,25 @@ type updateRecepcionistaRequest struct {
 }
 
 type recepcionistaCedulaRequest struct {
-	Cedula int32 `json:"cedula" binding:"required"`
+	Cedula string `json:"cedula" binding:"required"`
 }
 
 /* =========================
    CREATE
 ========================= */
-
+// CreateRecepcionista godoc
+// @Summary Crear recepcionista
+// @Description Registra un nuevo recepcionista en el sistema
+// @Tags recepcionistas
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param recepcionista body createRecepcionistaRequest true "Datos del recepcionista"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /recepcionistas [post]
 func (h *RecepcionistaHandler) CreateRecepcionista(c *gin.Context) {
 	var req createRecepcionistaRequest
 
@@ -81,7 +92,16 @@ func (h *RecepcionistaHandler) CreateRecepcionista(c *gin.Context) {
 /* =========================
    GET
 ========================= */
-
+// GetRecepcionistas godoc
+// @Summary Obtener todos los recepcionistas
+// @Description Devuelve la lista completa de recepcionistas
+// @Tags recepcionistas
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} object
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /recepcionistas [get]
 func (h *RecepcionistaHandler) GetRecepcionistas(c *gin.Context) {
 	data, err := h.q.GetRecepcionistas(c.Request.Context())
 	if err != nil {
@@ -92,16 +112,22 @@ func (h *RecepcionistaHandler) GetRecepcionistas(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
+// GetRecepcionistaByCedula godoc
+// @Summary Obtener recepcionista por cédula
+// @Description Busca un recepcionista por su número de cédula
+// @Tags recepcionistas
+// @Produce json
+// @Security BearerAuth
+// @Param cedula path string true "Cédula del recepcionista"
+// @Success 200 {object} object
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /recepcionistas/{cedula} [get]
 func (h *RecepcionistaHandler) GetRecepcionistaByCedula(c *gin.Context) {
-	param := c.Param("cedula")
+	cedula := c.Param("cedula")
 
-	cedula, err := strconv.Atoi(param)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "cédula inválida"})
-		return
-	}
-
-	data, err := h.q.GetRecepcionistaByCedula(c.Request.Context(), int32(cedula))
+	data, err := h.q.GetRecepcionistaByCedula(c.Request.Context(), cedula)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "no existe"})
@@ -114,6 +140,18 @@ func (h *RecepcionistaHandler) GetRecepcionistaByCedula(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
+// SearchRecepcionistas godoc
+// @Summary Buscar recepcionistas
+// @Description Busca recepcionistas por nombre, apellidos, cédula o correo
+// @Tags recepcionistas
+// @Produce json
+// @Security BearerAuth
+// @Param q query string true "Término de búsqueda"
+// @Success 200 {array} object
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /recepcionistas/buscar [get]
 func (h *RecepcionistaHandler) SearchRecepcionistas(c *gin.Context) {
 	query := c.Query("q")
 
@@ -144,7 +182,20 @@ func (h *RecepcionistaHandler) SearchRecepcionistas(c *gin.Context) {
 /* =========================
    UPDATE
 ========================= */
-
+// UpdateRecepcionista godoc
+// @Summary Actualizar recepcionista
+// @Description Actualiza los datos de un recepcionista existente
+// @Tags recepcionistas
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param recepcionista body updateRecepcionistaRequest true "Datos a actualizar"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /recepcionistas [put]
 func (h *RecepcionistaHandler) UpdateRecepcionista(c *gin.Context) {
 	var req updateRecepcionistaRequest
 
@@ -179,7 +230,20 @@ func (h *RecepcionistaHandler) UpdateRecepcionista(c *gin.Context) {
 /* =========================
    DELETE / TOGGLE
 ========================= */
-
+// DeleteRecepcionista godoc
+// @Summary Eliminar recepcionista (soft delete)
+// @Description Desactiva un recepcionista en el sistema
+// @Tags recepcionistas
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param recepcionista body recepcionistaCedulaRequest true "Cédula del recepcionista"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /recepcionistas [delete]
 func (h *RecepcionistaHandler) DeleteRecepcionista(c *gin.Context) {
 	var req recepcionistaCedulaRequest
 
@@ -203,6 +267,20 @@ func (h *RecepcionistaHandler) DeleteRecepcionista(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "desactivado"})
 }
 
+// ToggleRecepcionistaEstado godoc
+// @Summary Activar/Desactivar recepcionista
+// @Description Cambia el estado de un recepcionista (activo/inactivo)
+// @Tags recepcionistas
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param recepcionista body recepcionistaCedulaRequest true "Cédula del recepcionista"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /recepcionistas/toggle [put]
 func (h *RecepcionistaHandler) ToggleRecepcionistaEstado(c *gin.Context) {
 	var req recepcionistaCedulaRequest
 

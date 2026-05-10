@@ -1,3 +1,9 @@
+CREATE DATABASE hotel_reservas;
+USE hotel_reservas;
+
+-- =========================
+-- TIPO CLIENTE
+-- =========================
 CREATE TABLE tipocliente(
 	idTipoCliente		INT AUTO_INCREMENT NOT NULL,
     nombreTipoC			VARCHAR(45) NOT NULL,
@@ -10,7 +16,9 @@ CREATE TABLE tipocliente(
 
 )ENGINE=INNODB;
 
-
+-- =========================
+-- CLIENTE
+-- =========================
 CREATE TABLE cliente(
 	cedula				VARCHAR(20) NOT NULL,
     idTipoCliente		INT NOT NULL,
@@ -29,7 +37,9 @@ CREATE TABLE cliente(
 
 )ENGINE=INNODB;
 
-
+-- =========================
+-- TIPO HABITACION
+-- =========================
 CREATE TABLE tipohabitacion(
 	idTipoHabitacion	INT AUTO_INCREMENT NOT NULL,
     nombreTipoHab		VARCHAR(45) NOT NULL,
@@ -42,7 +52,9 @@ CREATE TABLE tipohabitacion(
 
 )ENGINE=INNODB;
 
-
+-- =========================
+-- HABITACION
+-- =========================
 CREATE TABLE habitacion(
 	idHabitacion		INT AUTO_INCREMENT NOT NULL,
     idTipoHab			INT NOT NULL,
@@ -58,7 +70,9 @@ CREATE TABLE habitacion(
 
 )ENGINE=INNODB;
 
-
+-- =========================
+-- RECEPCIONISTA
+-- =========================
 CREATE TABLE recepcionista(
 	cedula				VARCHAR(20) NOT NULL,
     nombre				VARCHAR(45) NOT NULL,
@@ -72,7 +86,9 @@ CREATE TABLE recepcionista(
 
 )ENGINE=INNODB;
 
-
+-- =========================
+-- RESERVA
+-- =========================
 CREATE TABLE reserva(
 	idReserva			INT AUTO_INCREMENT NOT NULL,
     idRecepcionista		VARCHAR(20) NOT NULL,
@@ -94,7 +110,9 @@ CREATE TABLE reserva(
 
 )ENGINE=INNODB;
 
-
+-- =========================
+-- TARIFA
+-- =========================
 CREATE TABLE tarifa(
 	idTarifa			INT AUTO_INCREMENT NOT NULL,
     idTipoHabitacion	INT NOT NULL,
@@ -113,7 +131,9 @@ CREATE TABLE tarifa(
 
 )ENGINE=INNODB;
 
-
+-- =========================
+-- DETALLE RESERVA
+-- =========================
 CREATE TABLE detallereserva(
 	idDetalleReserva	INT AUTO_INCREMENT NOT NULL,
     idHabitacion		INT NOT NULL,
@@ -145,7 +165,9 @@ CREATE TABLE detallereserva(
 
 )ENGINE=INNODB;
 
-
+-- =========================
+-- USERS
+-- =========================
 CREATE TABLE users(
 	id				INT AUTO_INCREMENT NOT NULL,
     name			VARCHAR(100) NOT NULL,
@@ -157,7 +179,7 @@ CREATE TABLE users(
 
     created_at		TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at		TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
-    				ON UPDATE CURRENT_TIMESTAMP,
+                    ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT pk_users 
     PRIMARY KEY(id),
@@ -166,3 +188,126 @@ CREATE TABLE users(
     UNIQUE(email)
 
 )ENGINE=INNODB;
+
+-- =========================
+-- INSERTS
+-- =========================
+
+-- TIPO CLIENTE
+INSERT INTO tipocliente(nombreTipoC, descripcion, descuentoBase)
+VALUES
+('Regular', 'Cliente regular', 0.00),
+('VIP', 'Cliente VIP', 15.00),
+('Empresarial', 'Cliente corporativo', 10.00);
+
+-- CLIENTE
+INSERT INTO cliente(
+    cedula,
+    idTipoCliente,
+    nombre,
+    apellidos,
+    telefono,
+    direccion
+)
+VALUES
+('10101010', 1, 'Juan', 'Perez', '8888-1111', 'San Jose'),
+('20202020', 2, 'Maria', 'Lopez', '8888-2222', 'Heredia'),
+('30303030', 3, 'Carlos', 'Ramirez', '8888-3333', 'Alajuela');
+
+-- TIPO HABITACION
+INSERT INTO tipohabitacion(
+    nombreTipoHab,
+    descripcion,
+    capacidadMaxima
+)
+VALUES
+('Sencilla', 'Una cama individual', 1),
+('Doble', 'Dos camas matrimoniales', 2),
+('Suite', 'Habitacion de lujo', 4);
+
+-- HABITACION
+INSERT INTO habitacion(
+    idTipoHab,
+    numeroHabitacion
+)
+VALUES
+(1, '101'),
+(1, '102'),
+(2, '201'),
+(2, '202'),
+(3, '301');
+
+-- RECEPCIONISTA
+INSERT INTO recepcionista(
+    cedula,
+    nombre,
+    apellidos,
+    telefono,
+    correo
+)
+VALUES
+('11111111', 'Ana', 'Gomez', '8888-4444', 'ana@hotel.com'),
+('22222222', 'Luis', 'Mora', '8888-5555', 'luis@hotel.com');
+
+-- RESERVA
+INSERT INTO reserva(
+    idRecepcionista,
+    idCliente,
+    fechaReserva,
+    estadoReserva
+)
+VALUES
+('11111111', '10101010', NOW(), 'Activa'),
+('22222222', '20202020', NOW(), 'Pendiente');
+
+-- TARIFA
+INSERT INTO tarifa(
+    idTipoHabitacion,
+    precioBase,
+    nombreTarifa,
+    fechaInicio,
+    fechaFin
+)
+VALUES
+(1, 35000, 'Temporada Baja', '2026-01-01', '2026-06-30'),
+(2, 55000, 'Temporada Baja', '2026-01-01', '2026-06-30'),
+(3, 95000, 'Temporada Alta', '2026-07-01', '2026-12-31');
+
+-- DETALLE RESERVA
+INSERT INTO detallereserva(
+    idHabitacion,
+    idReserva,
+    idTarifa,
+    cantidadPersonas,
+    precioAplicado,
+    fechaEntrada,
+    fechaSalida,
+    iva,
+    subTotal,
+    total
+)
+VALUES
+(
+    1,
+    1,
+    1,
+    1,
+    35000,
+    '2026-05-10 14:00:00',
+    '2026-05-12 12:00:00',
+    4550,
+    35000,
+    39550
+),
+(
+    3,
+    2,
+    2,
+    2,
+    55000,
+    '2026-06-01 14:00:00',
+    '2026-06-05 12:00:00',
+    7150,
+    55000,
+    62150
+);

@@ -12,7 +12,7 @@ import (
 
 type Server struct {
 	dbtx         *dto.Queries
-	router       *gin.Engine
+	Router       *gin.Engine
 	tokenBuilder security.Builder
 }
 
@@ -64,10 +64,10 @@ func NewServer(dbtx *dto.Queries, secret string) (*Server, error) {
 		TipoHabitacionHandler: tipoHabitacionHandler,
 		HabitacionHandler:     habitacionHandler,
 	}, builder)
-	server.router = router
+	server.Router = router
 	return server, nil
 }
 
 func (server *Server) Start(url string) error {
-	return server.router.Run(url)
+	return server.Router.Run(url)
 }

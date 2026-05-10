@@ -49,7 +49,17 @@ type deleteRequest struct {
    HANDLERS
 ========================= */
 
-// REGISTER
+// Register godoc
+// @Summary Crear usuario
+// @Description Registra un nuevo usuario en el sistema
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body registerRequest true "Datos del usuario"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /users [post]
 func (h *UserHandler) Register(c *gin.Context) {
 	var req registerRequest
 
@@ -91,7 +101,16 @@ func (h *UserHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "usuario creado"})
 }
 
-// GET USERS
+// GetUsers godoc
+// @Summary Obtener todos los usuarios
+// @Description Devuelve la lista de usuarios activos
+// @Tags users
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} object
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /users [get]
 func (h *UserHandler) GetUsers(c *gin.Context) {
 	users, err := h.q.GetUsers(c.Request.Context())
 	if err != nil {
@@ -102,7 +121,17 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-// GET BY EMAIL
+// GetUserByEmail godoc
+// @Summary Obtener usuario por email
+// @Description Busca un usuario por su correo electrónico
+// @Tags users
+// @Produce json
+// @Security BearerAuth
+// @Param email path string true "Email del usuario"
+// @Success 200 {array} object
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /users/{email} [get]
 func (h *UserHandler) GetUserByEmail(c *gin.Context) {
 	email := c.Param("email")
 
@@ -117,7 +146,20 @@ func (h *UserHandler) GetUserByEmail(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-// UPDATE
+// UpdateUser godoc
+// @Summary Actualizar usuario
+// @Description Actualiza datos del usuario (con o sin password)
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param user body updateRequest true "Datos a actualizar"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /users [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	var req updateRequest
 
@@ -175,7 +217,20 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "usuario actualizado"})
 }
 
-// DELETE (soft toggle)
+// DeleteUser godoc
+// @Summary Eliminar usuario (soft delete)
+// @Description Cambia el estado del usuario en vez de borrarlo físicamente
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param user body deleteRequest true "ID del usuario"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /users [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	var req deleteRequest
 

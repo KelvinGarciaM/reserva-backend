@@ -27,7 +27,7 @@ func NewClienteHandler(q *dto.Queries) *ClienteHandler {
 =========================
 */
 type registerClienteRequest struct {
-	Cedula        int32  `json:"cedula" binding:"required"`
+	Cedula        string `json:"cedula" binding:"required"`
 	IdTipoCliente int32  `json:"idTipoCliente" binding:"required"`
 	Nombre        string `json:"nombre" binding:"required"`
 	Apellidos     string `json:"apellidos" binding:"required"`
@@ -36,7 +36,7 @@ type registerClienteRequest struct {
 }
 
 type updateClienteRequest struct {
-	Cedula        int32  `json:"cedula" binding:"required"`
+	Cedula        string `json:"cedula" binding:"required"`
 	IdTipoCliente int32  `json:"idTipoCliente" binding:"required"`
 	Nombre        string `json:"nombre" binding:"required"`
 	Apellidos     string `json:"apellidos" binding:"required"`
@@ -46,11 +46,11 @@ type updateClienteRequest struct {
 }
 
 type clienteCedulaRequest struct {
-	Cedula int32 `json:"cedula" binding:"required"`
+	Cedula string `json:"cedula" binding:"required"`
 }
 
 type deleteClienteRequest struct {
-	Cedula int32 `json:"cedula" binding:"required"`
+	Cedula string `json:"cedula" binding:"required"`
 }
 
 /* =========================
@@ -58,6 +58,19 @@ type deleteClienteRequest struct {
 ========================= */
 
 // CREATE
+// RegisterCliente godoc
+// @Summary Crear cliente
+// @Description Registra un nuevo cliente en el sistema
+// @Tags clientes
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param cliente body registerClienteRequest true "Datos del cliente"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /clientes [post]
 func (h *ClienteHandler) RegisterCliente(c *gin.Context) {
 	var req registerClienteRequest
 
@@ -107,6 +120,16 @@ func (h *ClienteHandler) RegisterCliente(c *gin.Context) {
 ========================= */
 
 // LISTAR TODOS (activos e inactivos)
+// GetClientes godoc
+// @Summary Obtener todos los clientes
+// @Description Devuelve la lista completa de clientes (activos e inactivos)
+// @Tags clientes
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} object
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /clientes [get]
 func (h *ClienteHandler) GetClientes(c *gin.Context) {
 	clientes, err := h.q.GetClientes(c.Request.Context())
 	if err != nil {
@@ -118,23 +141,39 @@ func (h *ClienteHandler) GetClientes(c *gin.Context) {
 }
 
 // BUSCAR POR CÉDULA
+// GetClienteByCedula godoc
+// @Summary Obtener cliente por cédula
+// @Description Busca un cliente por su número de cédula
+// @Tags clientes
+// @Produce json
+// @Security BearerAuth
+// @Param cedula path string true "Cédula del cliente"
+// @Success 200 {object} object
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /clientes/{cedula} [get]
 func (h *ClienteHandler) GetClienteByCedula(c *gin.Context) {
-	cedulaParam := c.Param("cedula")
 
-	cedula, err := strconv.Atoi(cedulaParam)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "cédula inválida"})
-		return
-	}
+	cedula := c.Param("cedula")
 
-	cliente, err := h.q.GetClienteByCedula(c.Request.Context(), int32(cedula))
+	cliente, err := h.q.GetClienteByCedula(
+		c.Request.Context(),
+		cedula,
+	)
+
 	if err != nil {
+
 		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "cliente no existe"})
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "cliente no existe",
+			})
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error buscando cliente"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "error buscando cliente",
+		})
 		return
 	}
 
@@ -142,6 +181,18 @@ func (h *ClienteHandler) GetClienteByCedula(c *gin.Context) {
 }
 
 // BUSCAR POR TIPO CLIENTE
+// GetClientesByTipoCliente godoc
+// @Summary Obtener clientes por tipo
+// @Description Busca clientes por ID de tipo de cliente
+// @Tags clientes
+// @Produce json
+// @Security BearerAuth
+// @Param idtipocliente path int true "ID del tipo de cliente"
+// @Success 200 {array} object
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /clientes/tipo/{idtipocliente} [get]
 func (h *ClienteHandler) GetClientesByTipoCliente(c *gin.Context) {
 	idParam := c.Param("idtipocliente")
 
@@ -161,6 +212,18 @@ func (h *ClienteHandler) GetClientesByTipoCliente(c *gin.Context) {
 }
 
 // BUSCAR POR (nombre, apellidos, etc)
+// SearchClientes godoc
+// @Summary Buscar clientes
+// @Description Busca clientes por nombre, apellidos, cédula o teléfono
+// @Tags clientes
+// @Produce json
+// @Security BearerAuth
+// @Param q query string true "Término de búsqueda"
+// @Success 200 {array} object
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /clientes/buscar [get]
 func (h *ClienteHandler) SearchClientes(c *gin.Context) {
 	query := c.Query("q")
 
@@ -191,7 +254,20 @@ func (h *ClienteHandler) SearchClientes(c *gin.Context) {
 /* =========================
    UPDATE
 ========================= */
-
+// UpdateCliente godoc
+// @Summary Actualizar cliente
+// @Description Actualiza los datos de un cliente existente
+// @Tags clientes
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param cliente body updateClienteRequest true "Datos a actualizar"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /clientes [put]
 func (h *ClienteHandler) UpdateCliente(c *gin.Context) {
 	var req updateClienteRequest
 
@@ -236,6 +312,20 @@ func (h *ClienteHandler) UpdateCliente(c *gin.Context) {
 ========================= */
 
 // DESACTIVAR
+// DeleteCliente godoc
+// @Summary Desactivar cliente (soft delete)
+// @Description Desactiva un cliente en el sistema
+// @Tags clientes
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param cliente body clienteCedulaRequest true "Cédula del cliente"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /clientes [delete]
 func (h *ClienteHandler) DeleteCliente(c *gin.Context) {
 	var req clienteCedulaRequest
 
@@ -260,6 +350,20 @@ func (h *ClienteHandler) DeleteCliente(c *gin.Context) {
 }
 
 // ACTIVAR / DESACTIVAR
+// ToggleClienteEstado godoc
+// @Summary Activar/Desactivar cliente
+// @Description Cambia el estado de un cliente (activo/inactivo)
+// @Tags clientes
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param cliente body clienteCedulaRequest true "Cédula del cliente"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /clientes/toggle [put]
 func (h *ClienteHandler) ToggleClienteEstado(c *gin.Context) {
 	var req clienteCedulaRequest
 
