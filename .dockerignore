@@ -1,0 +1,33 @@
+# Ignora la carpeta de Git (historial del repositorio)
+.git
+
+# Ignora el archivo de configuración de Git
+.gitignore
+
+# Ignora el archivo de variables de entorno
+# (puede contener contraseñas y secretos)
+utils/app.env
+
+# Ignora archivos temporales
+tmp/
+
+# Ignora carpeta de logs
+logs/
+
+# Ignora todos los archivos .log
+*.log
+
+# Ignora ejecutables de Windows
+*.exe
+
+# Ignora binarios compilados de Go/Linux
+*.out
+
+# Ignora reportes de cobertura de tests
+coverage/
+
+# Ignora builds generados
+dist/
+
+# Ignora carpetas de compilación
+build/
