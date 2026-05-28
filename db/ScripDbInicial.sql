@@ -96,6 +96,9 @@ CREATE TABLE reserva(
     fechaReserva		DATETIME NOT NULL,
     estadoReserva		VARCHAR(25) NOT NULL,
     estado				TINYINT NOT NULL DEFAULT 1,
+    iva                 decimal(10,2) NOT NULL,
+    subTotal            decimal(10,2) NOT NULL,
+    total               decimal(10,2) NOT NULL,
 
     CONSTRAINT pk_reserva 
     PRIMARY KEY(idReserva),

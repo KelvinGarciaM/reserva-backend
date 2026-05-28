@@ -57,6 +57,9 @@ type Reserva struct {
 	Fechareserva    time.Time `json:"fechareserva"`
 	Estadoreserva   string    `json:"estadoreserva"`
 	Estado          int8      `json:"estado"`
+	Iva             string    `json:"iva"`
+	Subtotal        string    `json:"subtotal"`
+	Total           string    `json:"total"`
 }
 
 type Tarifa struct {

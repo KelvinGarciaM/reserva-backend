@@ -16,9 +16,12 @@ INSERT INTO Reserva (
     idRecepcionista,
     idCliente,
     fechaReserva,
-    estadoReserva
+    estadoReserva,
+    iva,
+    subTotal,
+    total
 )
-VALUES (?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 `
 
 type CreateReservaParams struct {
@@ -26,6 +29,9 @@ type CreateReservaParams struct {
 	Idcliente       string    `json:"idcliente"`
 	Fechareserva    time.Time `json:"fechareserva"`
 	Estadoreserva   string    `json:"estadoreserva"`
+	Iva             string    `json:"iva"`
+	Subtotal        string    `json:"subtotal"`
+	Total           string    `json:"total"`
 }
 
 func (q *Queries) CreateReserva(ctx context.Context, arg CreateReservaParams) (sql.Result, error) {
@@ -34,6 +40,9 @@ func (q *Queries) CreateReserva(ctx context.Context, arg CreateReservaParams) (s
 		arg.Idcliente,
 		arg.Fechareserva,
 		arg.Estadoreserva,
+		arg.Iva,
+		arg.Subtotal,
+		arg.Total,
 	)
 }
 
@@ -43,7 +52,7 @@ SET estado = CASE
     WHEN estado = 1 THEN 0
     ELSE 1
 END
-WHERE idReserva= ?
+WHERE idReserva = ?
 `
 
 func (q *Queries) DeleteReserva(ctx context.Context, idreserva int32) (sql.Result, error) {
@@ -57,7 +66,10 @@ SELECT
     idCliente,
     fechaReserva,
     estadoReserva,
-    estado
+    estado,
+    iva,
+    subTotal,
+    total
 FROM Reserva
 WHERE idReserva = ? AND estado = 1
 `
@@ -72,6 +84,9 @@ func (q *Queries) GetReservaById(ctx context.Context, idreserva int32) (Reserva,
 		&i.Fechareserva,
 		&i.Estadoreserva,
 		&i.Estado,
+		&i.Iva,
+		&i.Subtotal,
+		&i.Total,
 	)
 	return i, err
 }
@@ -83,7 +98,10 @@ SELECT
     idCliente,
     fechaReserva,
     estadoReserva,
-    estado
+    estado,
+    iva,
+    subTotal,
+    total
 FROM Reserva
 WHERE estado = 1
 `
@@ -104,6 +122,9 @@ func (q *Queries) GetReservas(ctx context.Context) ([]Reserva, error) {
 			&i.Fechareserva,
 			&i.Estadoreserva,
 			&i.Estado,
+			&i.Iva,
+			&i.Subtotal,
+			&i.Total,
 		); err != nil {
 			return nil, err
 		}
@@ -125,7 +146,10 @@ SELECT
     idCliente,
     fechaReserva,
     estadoReserva,
-    estado
+    estado,
+    iva,
+    subTotal,
+    total
 FROM Reserva
 WHERE idCliente = ? AND estado = 1
 `
@@ -146,6 +170,9 @@ func (q *Queries) GetReservasByCliente(ctx context.Context, idcliente string) ([
 			&i.Fechareserva,
 			&i.Estadoreserva,
 			&i.Estado,
+			&i.Iva,
+			&i.Subtotal,
+			&i.Total,
 		); err != nil {
 			return nil, err
 		}
@@ -167,7 +194,10 @@ SELECT
     idCliente,
     fechaReserva,
     estadoReserva,
-    estado
+    estado,
+    iva,
+    subTotal,
+    total
 FROM Reserva
 WHERE idRecepcionista = ? AND estado = 1
 `
@@ -188,6 +218,9 @@ func (q *Queries) GetReservasByRecepcionista(ctx context.Context, idrecepcionist
 			&i.Fechareserva,
 			&i.Estadoreserva,
 			&i.Estado,
+			&i.Iva,
+			&i.Subtotal,
+			&i.Total,
 		); err != nil {
 			return nil, err
 		}
@@ -224,7 +257,10 @@ SET
     idCliente = ?,
     fechaReserva = ?,
     estadoReserva = ?,
-    estado = ?
+    estado = ?,
+    iva = ?,
+    subTotal = ?,
+    total = ?
 WHERE idReserva = ?
 `
 
@@ -234,6 +270,9 @@ type UpdateReservaParams struct {
 	Fechareserva    time.Time `json:"fechareserva"`
 	Estadoreserva   string    `json:"estadoreserva"`
 	Estado          int8      `json:"estado"`
+	Iva             string    `json:"iva"`
+	Subtotal        string    `json:"subtotal"`
+	Total           string    `json:"total"`
 	Idreserva       int32     `json:"idreserva"`
 }
 
@@ -244,6 +283,9 @@ func (q *Queries) UpdateReserva(ctx context.Context, arg UpdateReservaParams) (s
 		arg.Fechareserva,
 		arg.Estadoreserva,
 		arg.Estado,
+		arg.Iva,
+		arg.Subtotal,
+		arg.Total,
 		arg.Idreserva,
 	)
 }
