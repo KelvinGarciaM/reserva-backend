@@ -2,7 +2,11 @@ package handlers
 
 import (
 	"database/sql"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
 
 	"reserva-backend/dto"
 	"reserva-backend/security"
@@ -11,6 +15,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
+	"github.com/google/uuid"
 )
 
 type UserHandler struct {
@@ -30,6 +35,7 @@ type registerRequest struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 	Role     string `json:"role"`
+	Image    string `json:"image"`
 }
 
 type updateRequest struct {
@@ -39,6 +45,7 @@ type updateRequest struct {
 	Password string `json:"password"`
 	Role     string `json:"role"`
 	Estado   int8   `json:"estado"`
+	Image    string `json:"image"`
 }
 
 type deleteRequest struct {
@@ -49,17 +56,6 @@ type deleteRequest struct {
    HANDLERS
 ========================= */
 
-// Register godoc
-// @Summary Crear usuario
-// @Description Registra un nuevo usuario en el sistema
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param user body registerRequest true "Datos del usuario"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /users [post]
 func (h *UserHandler) Register(c *gin.Context) {
 	var req registerRequest
 
@@ -79,59 +75,31 @@ func (h *UserHandler) Register(c *gin.Context) {
 		Email:    req.Email,
 		Password: hash,
 		Role:     sql.NullString{String: req.Role, Valid: req.Role != ""},
+		Image:    sql.NullString{String: req.Image, Valid: req.Image != ""},
 	})
 
 	if err != nil {
-
 		var mysqlErr *mysql.MySQLError
-
 		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "el correo ya está registrado",
-			})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "el correo ya está registrado"})
 			return
 		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "error creando usuario",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error creando usuario"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "usuario creado"})
 }
 
-// GetUsers godoc
-// @Summary Obtener todos los usuarios
-// @Description Devuelve la lista de usuarios activos
-// @Tags users
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {array} object
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /users [get]
 func (h *UserHandler) GetUsers(c *gin.Context) {
 	users, err := h.q.GetUsers(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error obteniendo usuarios"})
 		return
 	}
-
 	c.JSON(http.StatusOK, users)
 }
 
-// GetUserByEmail godoc
-// @Summary Obtener usuario por email
-// @Description Busca un usuario por su correo electrónico
-// @Tags users
-// @Produce json
-// @Security BearerAuth
-// @Param email path string true "Email del usuario"
-// @Success 200 {array} object
-// @Failure 401 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Router /users/{email} [get]
 func (h *UserHandler) GetUserByEmail(c *gin.Context) {
 	email := c.Param("email")
 
@@ -142,24 +110,9 @@ func (h *UserHandler) GetUserByEmail(c *gin.Context) {
 	}
 
 	user.Password = ""
-
 	c.JSON(http.StatusOK, user)
 }
 
-// UpdateUser godoc
-// @Summary Actualizar usuario
-// @Description Actualiza datos del usuario (con o sin password)
-// @Tags users
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param user body updateRequest true "Datos a actualizar"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /users [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	var req updateRequest
 
@@ -174,40 +127,36 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	)
 
 	if req.Password != "" {
-		// con password
 		hash, errHash := security.HashPassword(req.Password)
 		if errHash != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "error al encriptar password"})
 			return
 		}
-
 		result, err = h.q.UpdateUserWithPassword(c.Request.Context(), dto.UpdateUserWithPasswordParams{
 			Name:     req.Name,
 			Role:     sql.NullString{String: req.Role, Valid: req.Role != ""},
 			Email:    req.Email,
 			Password: hash,
+			Image:    sql.NullString{String: req.Image, Valid: req.Image != ""},
 			Estado:   req.Estado,
 			ID:       req.ID,
 		})
-
 	} else {
-
 		result, err = h.q.UpdateUserWithoutPassword(c.Request.Context(), dto.UpdateUserWithoutPasswordParams{
 			Name:   req.Name,
 			Role:   sql.NullString{String: req.Role, Valid: req.Role != ""},
 			Email:  req.Email,
+			Image:  sql.NullString{String: req.Image, Valid: req.Image != ""},
 			Estado: req.Estado,
 			ID:     req.ID,
 		})
 	}
 
-	// error DB
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error actualizando usuario"})
 		return
 	}
 
-	// validar existencia
 	rows, _ := result.RowsAffected()
 	if rows == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "usuario no existe"})
@@ -216,32 +165,17 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "usuario actualizado"})
 }
-
-// DeleteUser godoc
-// @Summary Eliminar usuario (soft delete)
-// @Description Cambia el estado del usuario en vez de borrarlo físicamente
-// @Tags users
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param user body deleteRequest true "ID del usuario"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /users [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
-	var req deleteRequest
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+	idStr := c.Param("id") // lee el ID de la URL
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
 		return
 	}
 
-	result, err := h.q.DeleteUser(c.Request.Context(), req.ID)
+	result, err := h.q.DeleteUser(c.Request.Context(), int32(id))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error actualizando usuario"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error eliminando usuario"})
 		return
 	}
 
@@ -251,7 +185,56 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
+	c.JSON(http.StatusOK, gin.H{"message": "usuario eliminado"})
+}
+func (h *UserHandler) UploadUserImg(c *gin.Context) {
+	fileHeader, err := c.FormFile("file0")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "archivo no encontrado"})
+		return
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "error abriendo archivo"})
+		return
+	}
+	defer file.Close()
+
+	upDir := "utils/images/users"
+	if _, err := os.Stat(upDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(upDir, os.ModePerm); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error creando directorio"})
+			return
+		}
+	}
+
+	filename := uuid.New().String() + "_" + filepath.Base(fileHeader.Filename)
+	dst, err := os.Create(filepath.Join(upDir, filename))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error creando archivo"})
+		return
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, file); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error guardando archivo"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "estado del usuario actualizado",
+		"filename": filename,
+		"message":  "imagen cargada exitosamente",
 	})
+}
+
+func (h *UserHandler) DownloadUserImg(c *gin.Context) {
+	filename := c.Param("filename")
+	if filename == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "filename requerido"})
+		return
+	}
+
+	fileUrl := "utils/images/users/" + filename
+	c.File(fileUrl)
 }
