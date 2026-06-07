@@ -172,23 +172,28 @@ CREATE TABLE detallereserva(
 -- USERS
 -- =========================
 CREATE TABLE users(
-	id				INT AUTO_INCREMENT NOT NULL,
-    name			VARCHAR(100) NOT NULL,
-    role			VARCHAR(30) DEFAULT 'user',
-    email			VARCHAR(150) NOT NULL,
-    password		VARCHAR(255) NOT NULL,
-    estado			TINYINT NOT NULL DEFAULT 1,
-    image			VARCHAR(255),
+    id              INT AUTO_INCREMENT NOT NULL,
+    name            VARCHAR(100) NOT NULL,
+    role            VARCHAR(30) DEFAULT 'user',
+    email           VARCHAR(150) NOT NULL,
+    password        VARCHAR(255) NOT NULL,
+    estado          TINYINT NOT NULL DEFAULT 1,
+    image           VARCHAR(255),
+    cedula          VARCHAR(20) NULL,
 
-    created_at		TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at		TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
                     ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT pk_users 
     PRIMARY KEY(id),
 
     CONSTRAINT uq_users_email 
-    UNIQUE(email)
+    UNIQUE(email),
+
+    CONSTRAINT fk_users_recepcionista
+    FOREIGN KEY(cedula) 
+    REFERENCES recepcionista(cedula)
 
 )ENGINE=INNODB;
 

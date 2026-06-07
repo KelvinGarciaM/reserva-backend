@@ -36,20 +36,17 @@ type registerRequest struct {
 	Password string `json:"password" binding:"required"`
 	Role     string `json:"role"`
 	Image    string `json:"image"`
+	Cedula   string `json:"cedula"`
 }
 
 type updateRequest struct {
-	ID       int32  `json:"id" binding:"required"`
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 	Role     string `json:"role"`
 	Estado   int8   `json:"estado"`
 	Image    string `json:"image"`
-}
-
-type deleteRequest struct {
-	ID int32 `json:"id" binding:"required"`
+	Cedula   string `json:"cedula"`
 }
 
 /* =========================
@@ -76,6 +73,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 		Password: hash,
 		Role:     sql.NullString{String: req.Role, Valid: req.Role != ""},
 		Image:    sql.NullString{String: req.Image, Valid: req.Image != ""},
+		Cedula:   sql.NullString{String: req.Cedula, Valid: req.Cedula != ""},
 	})
 
 	if err != nil {
@@ -114,17 +112,20 @@ func (h *UserHandler) GetUserByEmail(c *gin.Context) {
 }
 
 func (h *UserHandler) UpdateUser(c *gin.Context) {
-	var req updateRequest
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
 		return
 	}
 
-	var (
-		result sql.Result
-		err    error
-	)
+	var req updateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var result sql.Result
 
 	if req.Password != "" {
 		hash, errHash := security.HashPassword(req.Password)
@@ -138,8 +139,9 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 			Email:    req.Email,
 			Password: hash,
 			Image:    sql.NullString{String: req.Image, Valid: req.Image != ""},
+			Cedula:   sql.NullString{String: req.Cedula, Valid: req.Cedula != ""},
 			Estado:   req.Estado,
-			ID:       req.ID,
+			ID:       int32(id),
 		})
 	} else {
 		result, err = h.q.UpdateUserWithoutPassword(c.Request.Context(), dto.UpdateUserWithoutPasswordParams{
@@ -147,8 +149,9 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 			Role:   sql.NullString{String: req.Role, Valid: req.Role != ""},
 			Email:  req.Email,
 			Image:  sql.NullString{String: req.Image, Valid: req.Image != ""},
+			Cedula: sql.NullString{String: req.Cedula, Valid: req.Cedula != ""},
 			Estado: req.Estado,
-			ID:     req.ID,
+			ID:     int32(id),
 		})
 	}
 
@@ -157,16 +160,12 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "usuario no existe"})
-		return
-	}
-
+	_ = result
 	c.JSON(http.StatusOK, gin.H{"message": "usuario actualizado"})
 }
+
 func (h *UserHandler) DeleteUser(c *gin.Context) {
-	idStr := c.Param("id") // lee el ID de la URL
+	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
@@ -187,6 +186,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "usuario eliminado"})
 }
+
 func (h *UserHandler) UploadUserImg(c *gin.Context) {
 	fileHeader, err := c.FormFile("file0")
 	if err != nil {

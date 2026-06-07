@@ -48,7 +48,7 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 		admin.Use(middleware.RoleMiddleware("Administrador"))
 		{
 			// USERS - solo admin puede modificar/eliminar
-			admin.PUT("/users", h.UserHandler.UpdateUser)
+			admin.PUT("/users/:id", h.UserHandler.UpdateUser)
 			// router
 			admin.DELETE("/users/:id", h.UserHandler.DeleteUser)
 
