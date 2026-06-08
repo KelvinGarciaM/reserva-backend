@@ -57,6 +57,9 @@ type Reserva struct {
 	Fechareserva    time.Time `json:"fechareserva"`
 	Estadoreserva   string    `json:"estadoreserva"`
 	Estado          int8      `json:"estado"`
+	Iva             string    `json:"iva"`
+	Subtotal        string    `json:"subtotal"`
+	Total           string    `json:"total"`
 }
 
 type Tarifa struct {
@@ -94,6 +97,7 @@ type User struct {
 	Password  string         `json:"password"`
 	Estado    int8           `json:"estado"`
 	Image     sql.NullString `json:"image"`
+	Cedula    sql.NullString `json:"cedula"`
 	CreatedAt sql.NullTime   `json:"created_at"`
 	UpdatedAt sql.NullTime   `json:"updated_at"`
 }

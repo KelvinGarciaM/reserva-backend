@@ -3,9 +3,12 @@ INSERT INTO Reserva (
     idRecepcionista,
     idCliente,
     fechaReserva,
-    estadoReserva
+    estadoReserva,
+    iva,
+    subTotal,
+    total
 )
-VALUES (?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?);
 
 
 -- name: GetReservaById :one
@@ -15,7 +18,10 @@ SELECT
     idCliente,
     fechaReserva,
     estadoReserva,
-    estado
+    estado,
+    iva,
+    subTotal,
+    total
 FROM Reserva
 WHERE idReserva = ? AND estado = 1;
 
@@ -27,7 +33,10 @@ SELECT
     idCliente,
     fechaReserva,
     estadoReserva,
-    estado
+    estado,
+    iva,
+    subTotal,
+    total
 FROM Reserva
 WHERE estado = 1;
 
@@ -39,7 +48,10 @@ SELECT
     idCliente,
     fechaReserva,
     estadoReserva,
-    estado
+    estado,
+    iva,
+    subTotal,
+    total
 FROM Reserva
 WHERE idCliente = ? AND estado = 1;
 
@@ -51,7 +63,10 @@ SELECT
     idCliente,
     fechaReserva,
     estadoReserva,
-    estado
+    estado,
+    iva,
+    subTotal,
+    total
 FROM Reserva
 WHERE idRecepcionista = ? AND estado = 1;
 
@@ -63,7 +78,10 @@ SET
     idCliente = ?,
     fechaReserva = ?,
     estadoReserva = ?,
-    estado = ?
+    estado = ?,
+    iva = ?,
+    subTotal = ?,
+    total = ?
 WHERE idReserva = ?;
 
 
@@ -79,4 +97,4 @@ SET estado = CASE
     WHEN estado = 1 THEN 0
     ELSE 1
 END
-WHERE idReserva= sqlc.arg(idReserva);
+WHERE idReserva = sqlc.arg(idReserva);

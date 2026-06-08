@@ -30,6 +30,7 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 	{
 		api.POST("/users", h.UserHandler.Register)
 		api.POST("/login", h.AuthHandler.Login)
+		api.GET("/users", h.UserHandler.GetUsers)
 
 		// TARIFAS públicas
 		api.GET("/tarifas", h.TarifaHandler.GetTarifas)
@@ -54,8 +55,9 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 		admin.Use(middleware.RoleMiddleware("Administrador"))
 		{
 			// USERS - solo admin puede modificar/eliminar
-			admin.PUT("/users", h.UserHandler.UpdateUser)
-			admin.DELETE("/users", h.UserHandler.DeleteUser)
+			admin.PUT("/users/:id", h.UserHandler.UpdateUser)
+			// router
+			admin.DELETE("/users/:id", h.UserHandler.DeleteUser)
 
 			// TARIFAS - solo admin puede crear/editar/eliminar
 
@@ -87,8 +89,10 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 		staff.Use(middleware.RoleMiddleware("Administrador", "Recepcionista"))
 		{
 			// USERS - solo lectura
-			staff.GET("/users", h.UserHandler.GetUsers)
+			// staff.GET("/users", h.UserHandler.GetUsers)
 			staff.GET("/users/:email", h.UserHandler.GetUserByEmail)
+			staff.POST("/users/upload", h.UserHandler.UploadUserImg)
+			staff.GET("/users/download/:filename", h.UserHandler.DownloadUserImg)
 
 			// RESERVAS
 			staff.POST("/reservas", h.ReservaHandler.Register)

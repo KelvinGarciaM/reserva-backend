@@ -11,8 +11,8 @@ import (
 )
 
 const createUser = `-- name: CreateUser :exec
-INSERT INTO users (name, email, password, role, image)
-VALUES (?, ?, ?, ?, ?)
+INSERT INTO users (name, email, password, role, image, cedula)
+VALUES (?, ?, ?, ?, ?, ?)
 `
 
 type CreateUserParams struct {
@@ -21,6 +21,7 @@ type CreateUserParams struct {
 	Password string         `json:"password"`
 	Role     sql.NullString `json:"role"`
 	Image    sql.NullString `json:"image"`
+	Cedula   sql.NullString `json:"cedula"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
@@ -30,6 +31,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 		arg.Password,
 		arg.Role,
 		arg.Image,
+		arg.Cedula,
 	)
 	return err
 }
@@ -45,7 +47,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) (sql.Result, error) 
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, role, email, password, image, created_at, updated_at, estado
+SELECT id, name, role, email, password, image, cedula, created_at, updated_at, estado
 FROM users
 WHERE email = ? AND estado = 1
 `
@@ -57,6 +59,7 @@ type GetUserByEmailRow struct {
 	Email     string         `json:"email"`
 	Password  string         `json:"password"`
 	Image     sql.NullString `json:"image"`
+	Cedula    sql.NullString `json:"cedula"`
 	CreatedAt sql.NullTime   `json:"created_at"`
 	UpdatedAt sql.NullTime   `json:"updated_at"`
 	Estado    int8           `json:"estado"`
@@ -72,6 +75,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 		&i.Email,
 		&i.Password,
 		&i.Image,
+		&i.Cedula,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Estado,
@@ -80,7 +84,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 }
 
 const getUsers = `-- name: GetUsers :many
-SELECT id, name, role, email, image, created_at, updated_at, estado
+SELECT id, name, role, email, image, cedula, created_at, updated_at, estado
 FROM users
 WHERE estado = 1
 `
@@ -91,6 +95,7 @@ type GetUsersRow struct {
 	Role      sql.NullString `json:"role"`
 	Email     string         `json:"email"`
 	Image     sql.NullString `json:"image"`
+	Cedula    sql.NullString `json:"cedula"`
 	CreatedAt sql.NullTime   `json:"created_at"`
 	UpdatedAt sql.NullTime   `json:"updated_at"`
 	Estado    int8           `json:"estado"`
@@ -111,6 +116,7 @@ func (q *Queries) GetUsers(ctx context.Context) ([]GetUsersRow, error) {
 			&i.Role,
 			&i.Email,
 			&i.Image,
+			&i.Cedula,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Estado,
@@ -131,12 +137,13 @@ func (q *Queries) GetUsers(ctx context.Context) ([]GetUsersRow, error) {
 const updateUserWithPassword = `-- name: UpdateUserWithPassword :execresult
 UPDATE users
 SET
-    name = ?,
-    role = ?,
-    email = ?,
+    name     = ?,
+    role     = ?,
+    email    = ?,
     password = ?,
-    image = ?,      
-    estado = ?
+    image    = ?,
+    cedula   = ?,
+    estado   = ?
 WHERE id = ?
 `
 
@@ -146,6 +153,7 @@ type UpdateUserWithPasswordParams struct {
 	Email    string         `json:"email"`
 	Password string         `json:"password"`
 	Image    sql.NullString `json:"image"`
+	Cedula   sql.NullString `json:"cedula"`
 	Estado   int8           `json:"estado"`
 	ID       int32          `json:"id"`
 }
@@ -157,6 +165,7 @@ func (q *Queries) UpdateUserWithPassword(ctx context.Context, arg UpdateUserWith
 		arg.Email,
 		arg.Password,
 		arg.Image,
+		arg.Cedula,
 		arg.Estado,
 		arg.ID,
 	)
@@ -165,10 +174,11 @@ func (q *Queries) UpdateUserWithPassword(ctx context.Context, arg UpdateUserWith
 const updateUserWithoutPassword = `-- name: UpdateUserWithoutPassword :execresult
 UPDATE users
 SET
-    name = ?,
-    role = ?,
-    email = ?,
-    image = ?,      
+    name   = ?,
+    role   = ?,
+    email  = ?,
+    image  = ?,
+    cedula = ?,
     estado = ?
 WHERE id = ?
 `
@@ -178,6 +188,7 @@ type UpdateUserWithoutPasswordParams struct {
 	Role   sql.NullString `json:"role"`
 	Email  string         `json:"email"`
 	Image  sql.NullString `json:"image"`
+	Cedula sql.NullString `json:"cedula"`
 	Estado int8           `json:"estado"`
 	ID     int32          `json:"id"`
 }
@@ -188,6 +199,7 @@ func (q *Queries) UpdateUserWithoutPassword(ctx context.Context, arg UpdateUserW
 		arg.Role,
 		arg.Email,
 		arg.Image,
+		arg.Cedula,
 		arg.Estado,
 		arg.ID,
 	)
