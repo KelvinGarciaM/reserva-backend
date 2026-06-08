@@ -42,6 +42,13 @@ func ParseNullIdTipoHabitacion(id *int32) sql.NullInt32 {
 
 }
 
+func ParseNullPtrString(ns sql.NullString) *string {
+	if ns.Valid {
+		return &ns.String
+	}
+	return nil
+}
+
 func ParseNullString(value *string) sql.NullString {
 	if value == nil {
 		return sql.NullString{
@@ -64,6 +71,7 @@ func FormatNullDate(date sql.NullTime) *string {
 }
 
 func FormatEstado(estado int8) string {
+	println("Estado: ", estado)
 	if estado == 1 {
 		return "Activo"
 	}

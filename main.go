@@ -29,7 +29,7 @@ func main() {
 	docs.SwaggerInfo.BasePath = "/api/v1"
 
 	// 1. Cargar configuración
-	config, err := utils.LoadConfig(".")
+	config, err := utils.LoadConfig("./utils")
 	if err != nil {
 		log.Fatal("Error cargando config:", err)
 	}
