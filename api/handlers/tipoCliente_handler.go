@@ -108,8 +108,21 @@ func (h *TipoClienteHandler) GetTipoClientes(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error obteniendo tipos"})
 		return
 	}
+	response := make([]gin.H, 0)
 
-	c.JSON(http.StatusOK, tipos)
+	for _, t := range tipos {
+		response = append(response, gin.H{
+			"idTipoCliente": t.Idtipocliente,
+			"nombreTipoC":   t.Nombretipoc,
+			"descripcion":   t.Descripcion,
+			"descuentoBase": t.Descuentobase,
+			"estado":        t.Estado,
+		})
+	}
+
+	c.JSON(http.StatusOK, response)
+
+	//c.JSON(http.StatusOK, tipos)
 }
 
 // GET BY ID
@@ -145,8 +158,15 @@ func (h *TipoClienteHandler) GetTipoClienteById(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error buscando tipoCliente"})
 		return
 	}
+	c.JSON(http.StatusOK, gin.H{
+		"idTipoCliente": tipo.Idtipocliente,
+		"nombreTipoC":   tipo.Nombretipoc,
+		"descripcion":   tipo.Descripcion,
+		"descuentoBase": tipo.Descuentobase,
+		"estado":        tipo.Estado,
+	})
 
-	c.JSON(http.StatusOK, tipo)
+	//c.JSON(http.StatusOK, tipo)
 }
 
 // SearchTipoClientes godoc
@@ -287,6 +307,7 @@ func (h *TipoClienteHandler) DeleteTipoCliente(c *gin.Context) {
 // @Failure 404 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /tipos-cliente/toggle [put]
+
 func (h *TipoClienteHandler) ToggleTipoClienteEstado(c *gin.Context) {
 	var req tipoClienteIdRequest
 
@@ -297,15 +318,15 @@ func (h *TipoClienteHandler) ToggleTipoClienteEstado(c *gin.Context) {
 
 	result, err := h.q.ToggleTipoClienteEstado(c.Request.Context(), req.IdTipoCliente)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error cambiando estado"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error cambiando estado"})
 		return
 	}
 
 	rows, _ := result.RowsAffected()
 	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "tipoCliente no existe"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "El tipo de cliente no existe"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "estado actualizado"})
+	c.JSON(http.StatusOK, gin.H{"message": "Estado actualizado"})
 }
