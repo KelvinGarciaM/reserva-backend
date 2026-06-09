@@ -11,55 +11,68 @@ VALUES (?, ?, ?, ?, ?, ?);
 
 -- name: GetClientes :many
 SELECT
-    cedula,
-    idTipoCliente,
-    nombre,
-    apellidos,
-    telefono,
-    direccion,
-    estado
-FROM Cliente;
+    c.cedula,
+    c.idTipoCliente,
+    tc.nombreTipoC,
+    c.nombre,
+    c.apellidos,
+    c.telefono,
+    c.direccion,
+    c.estado
+FROM Cliente c
+INNER JOIN tipocliente tc
+    ON c.idTipoCliente = tc.idTipoCliente;
 
 -- name: GetClienteByCedula :one
 SELECT
-    cedula,
-    idTipoCliente,
-    nombre,
-    apellidos,
-    telefono,
-    direccion,
-    estado
-FROM Cliente
-WHERE cedula = ?;
+    c.cedula,
+    c.idTipoCliente,
+    tc.nombreTipoC,
+    c.nombre,
+    c.apellidos,
+    c.telefono,
+    c.direccion,
+    c.estado
+FROM Cliente c
+INNER JOIN tipocliente tc
+    ON c.idTipoCliente = tc.idTipoCliente
+WHERE c.cedula = ?;
 
 -- name: GetClientesByTipoCliente :many
 SELECT
-    cedula,
-    idTipoCliente,
-    nombre,
-    apellidos,
-    telefono,
-    direccion,
-    estado
-FROM Cliente
-WHERE idTipoCliente = ?;
+    c.cedula,
+    c.idTipoCliente,
+    tc.nombreTipoC,
+    c.nombre,
+    c.apellidos,
+    c.telefono,
+    c.direccion,
+    c.estado
+FROM Cliente c
+INNER JOIN tipocliente tc
+    ON c.idTipoCliente = tc.idTipoCliente
+WHERE c.idTipoCliente = ?;
 
 -- name: SearchClientes :many
 SELECT
-    cedula,
-    idTipoCliente,
-    nombre,
-    apellidos,
-    telefono,
-    direccion,
-    estado
-FROM Cliente
+    c.cedula,
+    c.idTipoCliente,
+    tc.nombreTipoC,
+    c.nombre,
+    c.apellidos,
+    c.telefono,
+    c.direccion,
+    c.estado
+FROM Cliente c
+INNER JOIN tipocliente tc
+    ON c.idTipoCliente = tc.idTipoCliente
 WHERE
-    CAST(cedula AS CHAR) LIKE CONCAT(?, '%')
-    OR nombre LIKE CONCAT(?, '%')
-    OR apellidos LIKE CONCAT(?, '%')
-    OR telefono LIKE CONCAT(?, '%')
-    OR direccion LIKE CONCAT(?, '%');
+    CAST(c.cedula AS CHAR) LIKE CONCAT(?, '%')
+    OR c.nombre LIKE CONCAT(?, '%')
+    OR c.apellidos LIKE CONCAT(?, '%')
+    OR c.telefono LIKE CONCAT(?, '%')
+    OR c.direccion LIKE CONCAT(?, '%')
+    OR tc.nombreTipoC LIKE CONCAT(?, '%');
 
 -- name: UpdateCliente :execresult
 UPDATE Cliente

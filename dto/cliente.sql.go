@@ -54,23 +54,38 @@ func (q *Queries) DeleteCliente(ctx context.Context, cedula string) (sql.Result,
 
 const getClienteByCedula = `-- name: GetClienteByCedula :one
 SELECT
-    cedula,
-    idTipoCliente,
-    nombre,
-    apellidos,
-    telefono,
-    direccion,
-    estado
-FROM Cliente
-WHERE cedula = ?
+    c.cedula,
+    c.idTipoCliente,
+    tc.nombreTipoC,
+    c.nombre,
+    c.apellidos,
+    c.telefono,
+    c.direccion,
+    c.estado
+FROM Cliente c
+INNER JOIN tipocliente tc
+    ON c.idTipoCliente = tc.idTipoCliente
+WHERE c.cedula = ?
 `
 
-func (q *Queries) GetClienteByCedula(ctx context.Context, cedula string) (Cliente, error) {
+type GetClienteByCedulaRow struct {
+	Cedula        string `json:"cedula"`
+	Idtipocliente int32  `json:"idtipocliente"`
+	Nombretipoc   string `json:"nombretipoc"`
+	Nombre        string `json:"nombre"`
+	Apellidos     string `json:"apellidos"`
+	Telefono      string `json:"telefono"`
+	Direccion     string `json:"direccion"`
+	Estado        int8   `json:"estado"`
+}
+
+func (q *Queries) GetClienteByCedula(ctx context.Context, cedula string) (GetClienteByCedulaRow, error) {
 	row := q.db.QueryRowContext(ctx, getClienteByCedula, cedula)
-	var i Cliente
+	var i GetClienteByCedulaRow
 	err := row.Scan(
 		&i.Cedula,
 		&i.Idtipocliente,
+		&i.Nombretipoc,
 		&i.Nombre,
 		&i.Apellidos,
 		&i.Telefono,
@@ -82,28 +97,43 @@ func (q *Queries) GetClienteByCedula(ctx context.Context, cedula string) (Client
 
 const getClientes = `-- name: GetClientes :many
 SELECT
-    cedula,
-    idTipoCliente,
-    nombre,
-    apellidos,
-    telefono,
-    direccion,
-    estado
-FROM Cliente
+    c.cedula,
+    c.idTipoCliente,
+    tc.nombreTipoC,
+    c.nombre,
+    c.apellidos,
+    c.telefono,
+    c.direccion,
+    c.estado
+FROM Cliente c
+INNER JOIN tipocliente tc
+    ON c.idTipoCliente = tc.idTipoCliente
 `
 
-func (q *Queries) GetClientes(ctx context.Context) ([]Cliente, error) {
+type GetClientesRow struct {
+	Cedula        string `json:"cedula"`
+	Idtipocliente int32  `json:"idtipocliente"`
+	Nombretipoc   string `json:"nombretipoc"`
+	Nombre        string `json:"nombre"`
+	Apellidos     string `json:"apellidos"`
+	Telefono      string `json:"telefono"`
+	Direccion     string `json:"direccion"`
+	Estado        int8   `json:"estado"`
+}
+
+func (q *Queries) GetClientes(ctx context.Context) ([]GetClientesRow, error) {
 	rows, err := q.db.QueryContext(ctx, getClientes)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Cliente
+	var items []GetClientesRow
 	for rows.Next() {
-		var i Cliente
+		var i GetClientesRow
 		if err := rows.Scan(
 			&i.Cedula,
 			&i.Idtipocliente,
+			&i.Nombretipoc,
 			&i.Nombre,
 			&i.Apellidos,
 			&i.Telefono,
@@ -125,29 +155,44 @@ func (q *Queries) GetClientes(ctx context.Context) ([]Cliente, error) {
 
 const getClientesByTipoCliente = `-- name: GetClientesByTipoCliente :many
 SELECT
-    cedula,
-    idTipoCliente,
-    nombre,
-    apellidos,
-    telefono,
-    direccion,
-    estado
-FROM Cliente
-WHERE idTipoCliente = ?
+    c.cedula,
+    c.idTipoCliente,
+    tc.nombreTipoC,
+    c.nombre,
+    c.apellidos,
+    c.telefono,
+    c.direccion,
+    c.estado
+FROM Cliente c
+INNER JOIN tipocliente tc
+    ON c.idTipoCliente = tc.idTipoCliente
+WHERE c.idTipoCliente = ?
 `
 
-func (q *Queries) GetClientesByTipoCliente(ctx context.Context, idtipocliente int32) ([]Cliente, error) {
+type GetClientesByTipoClienteRow struct {
+	Cedula        string `json:"cedula"`
+	Idtipocliente int32  `json:"idtipocliente"`
+	Nombretipoc   string `json:"nombretipoc"`
+	Nombre        string `json:"nombre"`
+	Apellidos     string `json:"apellidos"`
+	Telefono      string `json:"telefono"`
+	Direccion     string `json:"direccion"`
+	Estado        int8   `json:"estado"`
+}
+
+func (q *Queries) GetClientesByTipoCliente(ctx context.Context, idtipocliente int32) ([]GetClientesByTipoClienteRow, error) {
 	rows, err := q.db.QueryContext(ctx, getClientesByTipoCliente, idtipocliente)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Cliente
+	var items []GetClientesByTipoClienteRow
 	for rows.Next() {
-		var i Cliente
+		var i GetClientesByTipoClienteRow
 		if err := rows.Scan(
 			&i.Cedula,
 			&i.Idtipocliente,
+			&i.Nombretipoc,
 			&i.Nombre,
 			&i.Apellidos,
 			&i.Telefono,
@@ -169,20 +214,24 @@ func (q *Queries) GetClientesByTipoCliente(ctx context.Context, idtipocliente in
 
 const searchClientes = `-- name: SearchClientes :many
 SELECT
-    cedula,
-    idTipoCliente,
-    nombre,
-    apellidos,
-    telefono,
-    direccion,
-    estado
-FROM Cliente
+    c.cedula,
+    c.idTipoCliente,
+    tc.nombreTipoC,
+    c.nombre,
+    c.apellidos,
+    c.telefono,
+    c.direccion,
+    c.estado
+FROM Cliente c
+INNER JOIN tipocliente tc
+    ON c.idTipoCliente = tc.idTipoCliente
 WHERE
-    CAST(cedula AS CHAR) LIKE CONCAT(?, '%')
-    OR nombre LIKE CONCAT(?, '%')
-    OR apellidos LIKE CONCAT(?, '%')
-    OR telefono LIKE CONCAT(?, '%')
-    OR direccion LIKE CONCAT(?, '%')
+    CAST(c.cedula AS CHAR) LIKE CONCAT(?, '%')
+    OR c.nombre LIKE CONCAT(?, '%')
+    OR c.apellidos LIKE CONCAT(?, '%')
+    OR c.telefono LIKE CONCAT(?, '%')
+    OR c.direccion LIKE CONCAT(?, '%')
+    OR tc.nombreTipoC LIKE CONCAT(?, '%')
 `
 
 type SearchClientesParams struct {
@@ -191,26 +240,40 @@ type SearchClientesParams struct {
 	CONCAT_3 interface{} `json:"CONCAT_3"`
 	CONCAT_4 interface{} `json:"CONCAT_4"`
 	CONCAT_5 interface{} `json:"CONCAT_5"`
+	CONCAT_6 interface{} `json:"CONCAT_6"`
 }
 
-func (q *Queries) SearchClientes(ctx context.Context, arg SearchClientesParams) ([]Cliente, error) {
+type SearchClientesRow struct {
+	Cedula        string `json:"cedula"`
+	Idtipocliente int32  `json:"idtipocliente"`
+	Nombretipoc   string `json:"nombretipoc"`
+	Nombre        string `json:"nombre"`
+	Apellidos     string `json:"apellidos"`
+	Telefono      string `json:"telefono"`
+	Direccion     string `json:"direccion"`
+	Estado        int8   `json:"estado"`
+}
+
+func (q *Queries) SearchClientes(ctx context.Context, arg SearchClientesParams) ([]SearchClientesRow, error) {
 	rows, err := q.db.QueryContext(ctx, searchClientes,
 		arg.CONCAT,
 		arg.CONCAT_2,
 		arg.CONCAT_3,
 		arg.CONCAT_4,
 		arg.CONCAT_5,
+		arg.CONCAT_6,
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Cliente
+	var items []SearchClientesRow
 	for rows.Next() {
-		var i Cliente
+		var i SearchClientesRow
 		if err := rows.Scan(
 			&i.Cedula,
 			&i.Idtipocliente,
+			&i.Nombretipoc,
 			&i.Nombre,
 			&i.Apellidos,
 			&i.Telefono,
