@@ -106,6 +106,7 @@ CREATE TABLE tarifa(
     fechaInicio			DATE,
     fechaFin			DATE,
     descripcion         VARCHAR(45),
+    desactivadaManual   TINYINT DEFAULT 0,
     estado				TINYINT NOT NULL DEFAULT 1,
 
     CONSTRAINT pk_tarifa 
