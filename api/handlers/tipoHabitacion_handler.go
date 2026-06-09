@@ -45,22 +45,43 @@ func getIDHab(c *gin.Context) (int32, bool) {
 // Handler
 // Create
 func (h *TipoHabitacionHandler) RegisterTipoHabitacion(c *gin.Context) {
+
 	var req registerTipoHabitacionRequest
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	_, err := h.q.GetTipoHabitacionByNombre(
+		c,
+		req.NombreTipoHab,
+	)
+
+	if err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Ya existe un tipo de habitación con ese nombre",
+		})
+		return
+	}
+
 	args := dto.CreateTipoHabitacionParams{
 		Nombretipohab:   req.NombreTipoHab,
 		Descripcion:     req.Descripcion,
 		Capacidadmaxima: req.CapacidadMax,
 	}
+
 	result, err := h.q.CreateTipoHabitacion(c, args)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
+
 	id, _ := result.LastInsertId()
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Tipo de habitación registrado exitosamente",
 		"id":      id,

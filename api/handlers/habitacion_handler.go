@@ -44,20 +44,34 @@ func getIDHabitacion(c *gin.Context) (int32, bool) {
 // Create
 func (h *HabitacionHandler) RegisterHabitacion(c *gin.Context) {
 	var req registerHabitacionRequest
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	_, err := h.q.GetHabitacionByNumero(c, req.NumeroHabitacion)
+
+	if err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Ya existe una habitación con ese número",
+		})
+		return
+	}
+
 	args := dto.CreateHabitacionParams{
 		Idtipohab:        req.IdTipoHab,
 		Numerohabitacion: req.NumeroHabitacion,
 	}
+
 	result, err := h.q.CreateHabitacion(c, args)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	id, _ := result.LastInsertId()
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Habitación creada exitosamente",
 		"id":      id,

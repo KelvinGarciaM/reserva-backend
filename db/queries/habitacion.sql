@@ -4,15 +4,19 @@ VALUES (?, ?);
 -- name: GetHabitacionById :one
 SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
-WHERE idHabitacion = ? AND estado = 1;
+WHERE idHabitacion = ?;
 -- name: GetHabitacionesByTipo :many
 SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
-WHERE idTipoHab = ? AND estado = 1;
+WHERE idTipoHab = ?;
 -- name: GetHabitaciones :many
 SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
+FROM Habitacion;
+-- name: GetHabitacionByNumero :one
+SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
-WHERE estado = 1;
+WHERE numeroHabitacion = ?
+LIMIT 1;
 -- name: UpdateHabitacion :execresult
 UPDATE Habitacion
 SET idTipoHab = ?, numeroHabitacion = ?, estado = ?

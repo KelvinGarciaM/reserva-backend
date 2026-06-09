@@ -37,7 +37,7 @@ func (q *Queries) DeleteHabitacion(ctx context.Context, idhabitacion int32) (sql
 const getHabitacionById = `-- name: GetHabitacionById :one
 SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
-WHERE idHabitacion = ? AND estado = 1
+WHERE idHabitacion = ?
 `
 
 func (q *Queries) GetHabitacionById(ctx context.Context, idhabitacion int32) (Habitacion, error) {
@@ -52,10 +52,28 @@ func (q *Queries) GetHabitacionById(ctx context.Context, idhabitacion int32) (Ha
 	return i, err
 }
 
+const getHabitacionByNumero = `-- name: GetHabitacionByNumero :one
+SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
+FROM Habitacion
+WHERE numeroHabitacion = ?
+LIMIT 1
+`
+
+func (q *Queries) GetHabitacionByNumero(ctx context.Context, numerohabitacion string) (Habitacion, error) {
+	row := q.db.QueryRowContext(ctx, getHabitacionByNumero, numerohabitacion)
+	var i Habitacion
+	err := row.Scan(
+		&i.Idhabitacion,
+		&i.Idtipohab,
+		&i.Numerohabitacion,
+		&i.Estado,
+	)
+	return i, err
+}
+
 const getHabitaciones = `-- name: GetHabitaciones :many
 SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
-WHERE estado = 1
 `
 
 func (q *Queries) GetHabitaciones(ctx context.Context) ([]Habitacion, error) {
@@ -89,7 +107,7 @@ func (q *Queries) GetHabitaciones(ctx context.Context) ([]Habitacion, error) {
 const getHabitacionesByTipo = `-- name: GetHabitacionesByTipo :many
 SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
-WHERE idTipoHab = ? AND estado = 1
+WHERE idTipoHab = ?
 `
 
 func (q *Queries) GetHabitacionesByTipo(ctx context.Context, idtipohab int32) ([]Habitacion, error) {
