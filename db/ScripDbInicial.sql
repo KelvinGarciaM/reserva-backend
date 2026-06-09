@@ -123,6 +123,7 @@ CREATE TABLE tarifa(
     nombreTarifa		VARCHAR(45) NOT NULL,
     fechaInicio			DATE,
     fechaFin			DATE,
+    descripcion         VARCHAR(150),
     estado				TINYINT NOT NULL DEFAULT 1,
 
     CONSTRAINT pk_tarifa 
@@ -262,11 +263,30 @@ INSERT INTO reserva(
     idRecepcionista,
     idCliente,
     fechaReserva,
-    estadoReserva
+    estadoReserva,
+    iva,
+    subTotal,
+    total
 )
 VALUES
-('11111111', '10101010', NOW(), 'Activa'),
-('22222222', '20202020', NOW(), 'Pendiente');
+(
+    '11111111',
+    '10101010',
+    NOW(),
+    'Activa',
+    4550.00,
+    35000.00,
+    39550.00
+),
+(
+    '22222222',
+    '20202020',
+    NOW(),
+    'Pendiente',
+    7150.00,
+    55000.00,
+    62150.00
+);
 
 -- TARIFA
 INSERT INTO tarifa(
