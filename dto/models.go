@@ -63,14 +63,15 @@ type Reserva struct {
 }
 
 type Tarifa struct {
-	Idtarifa         int32          `json:"idtarifa"`
-	Idtipohabitacion int32          `json:"idtipohabitacion"`
-	Preciobase       string         `json:"preciobase"`
-	Nombretarifa     string         `json:"nombretarifa"`
-	Fechainicio      sql.NullTime   `json:"fechainicio"`
-	Fechafin         sql.NullTime   `json:"fechafin"`
-	Descripcion      sql.NullString `json:"descripcion"`
-	Estado           int8           `json:"estado"`
+	Idtarifa          int32          `json:"idtarifa"`
+	Idtipohabitacion  int32          `json:"idtipohabitacion"`
+	Preciobase        string         `json:"preciobase"`
+	Nombretarifa      string         `json:"nombretarifa"`
+	Fechainicio       sql.NullTime   `json:"fechainicio"`
+	Fechafin          sql.NullTime   `json:"fechafin"`
+	Descripcion       sql.NullString `json:"descripcion"`
+	Desactivadamanual int8           `json:"desactivadamanual"`
+	Estado            int8           `json:"estado"`
 }
 
 type Tipocliente struct {

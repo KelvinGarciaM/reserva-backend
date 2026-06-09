@@ -114,3 +114,7 @@ func ParseStringPtrToTime(date *string) (time.Time, error) {
 
 	return fecha, nil
 }
+
+func FormatDateTime(fecha time.Time) string {
+	return fecha.Format("2006-01-02")
+}

@@ -34,7 +34,7 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 
 		// TARIFAS públicas
 		api.GET("/tarifas", h.TarifaHandler.GetTarifas)
-		api.GET("/tarifas/:nombreTarifa", h.TarifaHandler.GetTarifaByNombre)
+		api.GET("/tarifas/nombre/:nombreTarifa", h.TarifaHandler.GetTarifaByNombre)
 
 		api.GET("/tipos-habitacion", h.TipoHabitacionHandler.GetTipoHabitacion)
 		api.POST("/tarifas", h.TarifaHandler.CreateTarifa)
@@ -42,6 +42,7 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 
 		api.PATCH("/tarifas/:idTarifa/activar", h.TarifaHandler.ActivarTarifa)
 		api.PATCH("/tarifas/:idTarifa/desactivar", h.TarifaHandler.DesactivarTarifa)
+		api.GET("/tarifas/:idTarifa/estadisticas", h.TarifaHandler.GetEstadisticasTarifa)
 	}
 
 	// =========================

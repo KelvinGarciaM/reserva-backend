@@ -25,7 +25,8 @@ SELECT
     t.fechaInicio,
     t.fechaFin,
     t.descripcion,
-    t.estado
+    t.estado,
+    t.desactivadaManual
 FROM Tarifa t
 INNER JOIN TipoHabitacion th 
     ON t.idTipoHabitacion = th.idTipoHabitacion;
@@ -69,3 +70,12 @@ UPDATE tarifa
 SET estado = 0,
 desactivadaManual = 1
 WHERE idTarifa = ?;
+
+-- name: GetEstadisticasTarifa :one
+SELECT
+  COUNT(dr.idDetalleReserva) AS totalReservas,
+  CAST(MAX(r.fechaReserva) AS DATETIME) AS ultimaVezUtilizada
+FROM detallereserva dr
+INNER JOIN reserva r
+ON dr.idReserva = r.idReserva
+WHERE dr.idTarifa = ?;

@@ -8,6 +8,7 @@ package dto
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const activarTarifaSiEstaVigentePorUsuario = `-- name: ActivarTarifaSiEstaVigentePorUsuario :execresult
@@ -75,6 +76,28 @@ func (q *Queries) DesactivarTarifaPorUsuario(ctx context.Context, idtarifa int32
 	return q.db.ExecContext(ctx, desactivarTarifaPorUsuario, idtarifa)
 }
 
+const getEstadisticasTarifa = `-- name: GetEstadisticasTarifa :one
+SELECT
+  COUNT(dr.idDetalleReserva) AS totalReservas,
+  CAST(MAX(r.fechaReserva) AS DATETIME) AS ultimaVezUtilizada
+FROM detallereserva dr
+INNER JOIN reserva r
+ON dr.idReserva = r.idReserva
+WHERE dr.idTarifa = ?
+`
+
+type GetEstadisticasTarifaRow struct {
+	Totalreservas      int64     `json:"totalreservas"`
+	Ultimavezutilizada time.Time `json:"ultimavezutilizada"`
+}
+
+func (q *Queries) GetEstadisticasTarifa(ctx context.Context, idtarifa int32) (GetEstadisticasTarifaRow, error) {
+	row := q.db.QueryRowContext(ctx, getEstadisticasTarifa, idtarifa)
+	var i GetEstadisticasTarifaRow
+	err := row.Scan(&i.Totalreservas, &i.Ultimavezutilizada)
+	return i, err
+}
+
 const getTarifaByNombre = `-- name: GetTarifaByNombre :one
 SELECT 
     t.idTarifa,
@@ -124,21 +147,23 @@ SELECT
     t.fechaInicio,
     t.fechaFin,
     t.descripcion,
-    t.estado
+    t.estado,
+    t.desactivadaManual
 FROM Tarifa t
 INNER JOIN TipoHabitacion th 
     ON t.idTipoHabitacion = th.idTipoHabitacion
 `
 
 type GetTarifasRow struct {
-	Idtarifa       int32          `json:"idtarifa"`
-	Nombretarifa   string         `json:"nombretarifa"`
-	Tipohabitacion string         `json:"tipohabitacion"`
-	Preciobase     string         `json:"preciobase"`
-	Fechainicio    sql.NullTime   `json:"fechainicio"`
-	Fechafin       sql.NullTime   `json:"fechafin"`
-	Descripcion    sql.NullString `json:"descripcion"`
-	Estado         int8           `json:"estado"`
+	Idtarifa          int32          `json:"idtarifa"`
+	Nombretarifa      string         `json:"nombretarifa"`
+	Tipohabitacion    string         `json:"tipohabitacion"`
+	Preciobase        string         `json:"preciobase"`
+	Fechainicio       sql.NullTime   `json:"fechainicio"`
+	Fechafin          sql.NullTime   `json:"fechafin"`
+	Descripcion       sql.NullString `json:"descripcion"`
+	Estado            int8           `json:"estado"`
+	Desactivadamanual int8           `json:"desactivadamanual"`
 }
 
 func (q *Queries) GetTarifas(ctx context.Context) ([]GetTarifasRow, error) {
@@ -159,6 +184,7 @@ func (q *Queries) GetTarifas(ctx context.Context) ([]GetTarifasRow, error) {
 			&i.Fechafin,
 			&i.Descripcion,
 			&i.Estado,
+			&i.Desactivadamanual,
 		); err != nil {
 			return nil, err
 		}
