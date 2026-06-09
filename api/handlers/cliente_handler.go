@@ -137,7 +137,22 @@ func (h *ClienteHandler) GetClientes(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, clientes)
+	response := make([]gin.H, 0)
+
+	for _, cli := range clientes {
+		response = append(response, gin.H{
+			"cedula":        cli.Cedula,
+			"idTipoCliente": cli.Idtipocliente,
+			"nombreTipoC":   cli.Nombretipoc,
+			"nombre":        cli.Nombre,
+			"apellidos":     cli.Apellidos,
+			"telefono":      cli.Telefono,
+			"direccion":     cli.Direccion,
+			"estado":        cli.Estado,
+		})
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // BUSCAR POR CÉDULA
@@ -177,7 +192,16 @@ func (h *ClienteHandler) GetClienteByCedula(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, cliente)
+	c.JSON(http.StatusOK, gin.H{
+		"cedula":        cliente.Cedula,
+		"idTipoCliente": cliente.Idtipocliente,
+		"nombreTipoC":   cliente.Nombretipoc,
+		"nombre":        cliente.Nombre,
+		"apellidos":     cliente.Apellidos,
+		"telefono":      cliente.Telefono,
+		"direccion":     cliente.Direccion,
+		"estado":        cliente.Estado,
+	})
 }
 
 // BUSCAR POR TIPO CLIENTE
@@ -208,7 +232,22 @@ func (h *ClienteHandler) GetClientesByTipoCliente(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, clientes)
+	response := make([]gin.H, 0)
+
+	for _, cli := range clientes {
+		response = append(response, gin.H{
+			"cedula":        cli.Cedula,
+			"idTipoCliente": cli.Idtipocliente,
+			"nombreTipoC":   cli.Nombretipoc,
+			"nombre":        cli.Nombre,
+			"apellidos":     cli.Apellidos,
+			"telefono":      cli.Telefono,
+			"direccion":     cli.Direccion,
+			"estado":        cli.Estado,
+		})
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // BUSCAR POR (nombre, apellidos, etc)
@@ -240,6 +279,7 @@ func (h *ClienteHandler) SearchClientes(c *gin.Context) {
 			CONCAT_3: query,
 			CONCAT_4: query,
 			CONCAT_5: query,
+			CONCAT_6: query,
 		},
 	)
 
@@ -248,7 +288,22 @@ func (h *ClienteHandler) SearchClientes(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, clientes)
+	response := make([]gin.H, 0)
+
+	for _, cli := range clientes {
+		response = append(response, gin.H{
+			"cedula":        cli.Cedula,
+			"idTipoCliente": cli.Idtipocliente,
+			"nombreTipoC":   cli.Nombretipoc,
+			"nombre":        cli.Nombre,
+			"apellidos":     cli.Apellidos,
+			"telefono":      cli.Telefono,
+			"direccion":     cli.Direccion,
+			"estado":        cli.Estado,
+		})
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 /* =========================
