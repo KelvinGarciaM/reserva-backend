@@ -36,10 +36,6 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 		api.GET("/tarifas", h.TarifaHandler.GetTarifas)
 		api.GET("/tarifas/nombre/:nombreTarifa", h.TarifaHandler.GetTarifaByNombre)
 
-<<<<<<< HEAD
-=======
-		api.GET("/tipos-habitacion", h.TipoHabitacionHandler.GetTipoHabitacion)
->>>>>>> ff58b39fd7cec3e5ec8ce1ed27fc07a8d1446c16
 		api.POST("/tarifas", h.TarifaHandler.CreateTarifa)
 		api.PATCH("/tarifas/:idTarifa", h.TarifaHandler.UpdateTarifa)
 
@@ -61,13 +57,7 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 			// USERS - solo admin puede modificar/eliminar
 			admin.PUT("/users/:id", h.UserHandler.UpdateUser)
 			// router
-<<<<<<< HEAD
 			admin.DELETE("/users/:id", h.UserHandler.ToggleUserStatus)
-=======
-			admin.DELETE("/users/:id", h.UserHandler.DeleteUser)
-
-			// TARIFAS - solo admin puede crear/editar/eliminar
->>>>>>> ff58b39fd7cec3e5ec8ce1ed27fc07a8d1446c16
 
 			// TIPO CLIENTES - solo admin puede crear/editar/eliminar
 			admin.POST("/tipos-cliente", h.TipoClienteHandler.CreateTipoCliente)

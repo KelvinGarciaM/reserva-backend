@@ -75,7 +75,7 @@ func (t *TarifaHandler) CreateTarifa(ctx *gin.Context) {
 	}
 	args := dto.CreateTarifaParams{
 		Idtipohabitacion: req.IdTipoHabitacion,
-		Preciobase:       req.PrecioBase.String(),
+		Preciobase:       req.PrecioBase,
 		Nombretarifa:     req.NombreTarifa,
 		Fechainicio:      fechaInicio,
 		Fechafin:         fechaFin,
@@ -95,7 +95,6 @@ func (t *TarifaHandler) CreateTarifa(ctx *gin.Context) {
 
 // formato de respuesta que quiero que tenga el JSON
 type tarifaResponse struct {
-<<<<<<< HEAD
 	Idtarifa          int32           `json:"idtarifa"`
 	Nombretarifa      string          `json:"nombretarifa"`
 	Tipohabitacion    string          `json:"tipohabitacion"`
@@ -105,17 +104,6 @@ type tarifaResponse struct {
 	Descripcion       *string         `json:"descripcion"`
 	Estado            string          `json:"estado"`
 	Desactivadamanual int8            `json:"desactivadaManual"`
-=======
-	Idtarifa          int32   `json:"idtarifa"`
-	Nombretarifa      string  `json:"nombretarifa"`
-	Tipohabitacion    string  `json:"tipohabitacion"`
-	Preciobase        string  `json:"preciobase"`
-	Fechainicio       *string `json:"fechainicio"`
-	Fechafin          *string `json:"fechafin"`
-	Descripcion       *string `json:"descripcion"`
-	Estado            string  `json:"estado"`
-	Desactivadamanual int8    `json:"desactivadaManual"`
->>>>>>> ff58b39fd7cec3e5ec8ce1ed27fc07a8d1446c16
 }
 
 // convertir la estructura que me devuelve la db a el nuevo formato
