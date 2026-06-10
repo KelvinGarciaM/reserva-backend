@@ -72,22 +72,38 @@ func (q *Queries) GetHabitacionByNumero(ctx context.Context, numerohabitacion st
 }
 
 const getHabitaciones = `-- name: GetHabitaciones :many
-SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
-FROM Habitacion
+SELECT
+    h.idHabitacion,
+    h.idTipoHab,
+    th.nombreTipoHab,
+    h.numeroHabitacion,
+    h.estado
+FROM Habitacion h
+INNER JOIN TipoHabitacion th
+    ON h.idTipoHab = th.idTipoHabitacion
 `
 
-func (q *Queries) GetHabitaciones(ctx context.Context) ([]Habitacion, error) {
+type GetHabitacionesRow struct {
+	Idhabitacion     int32  `json:"idhabitacion"`
+	Idtipohab        int32  `json:"idtipohab"`
+	Nombretipohab    string `json:"nombretipohab"`
+	Numerohabitacion string `json:"numerohabitacion"`
+	Estado           int8   `json:"estado"`
+}
+
+func (q *Queries) GetHabitaciones(ctx context.Context) ([]GetHabitacionesRow, error) {
 	rows, err := q.db.QueryContext(ctx, getHabitaciones)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Habitacion
+	var items []GetHabitacionesRow
 	for rows.Next() {
-		var i Habitacion
+		var i GetHabitacionesRow
 		if err := rows.Scan(
 			&i.Idhabitacion,
 			&i.Idtipohab,
+			&i.Nombretipohab,
 			&i.Numerohabitacion,
 			&i.Estado,
 		); err != nil {

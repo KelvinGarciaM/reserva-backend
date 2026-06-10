@@ -10,8 +10,15 @@ SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
 WHERE idTipoHab = ?;
 -- name: GetHabitaciones :many
-SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
-FROM Habitacion;
+SELECT
+    h.idHabitacion,
+    h.idTipoHab,
+    th.nombreTipoHab,
+    h.numeroHabitacion,
+    h.estado
+FROM Habitacion h
+INNER JOIN TipoHabitacion th
+    ON h.idTipoHab = th.idTipoHabitacion;
 -- name: GetHabitacionByNumero :one
 SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
