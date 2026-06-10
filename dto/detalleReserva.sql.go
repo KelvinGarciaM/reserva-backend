@@ -9,6 +9,8 @@ import (
 	"context"
 	"database/sql"
 	"time"
+
+	decimal "github.com/shopspring/decimal"
 )
 
 const countTraslapesDetalleReserva = `-- name: CountTraslapesDetalleReserva :one
@@ -67,16 +69,16 @@ INSERT INTO detallereserva (idHabitacion, idReserva, idTarifa,cantidadPersonas,
 `
 
 type CreateDetalleReservaParams struct {
-	Idhabitacion     int32     `json:"idhabitacion"`
-	Idreserva        int32     `json:"idreserva"`
-	Idtarifa         int32     `json:"idtarifa"`
-	Cantidadpersonas int32     `json:"cantidadpersonas"`
-	Precioaplicado   string    `json:"precioaplicado"`
-	Fechaentrada     time.Time `json:"fechaentrada"`
-	Fechasalida      time.Time `json:"fechasalida"`
-	Iva              string    `json:"iva"`
-	Subtotal         string    `json:"subtotal"`
-	Total            string    `json:"total"`
+	Idhabitacion     int32           `json:"idhabitacion"`
+	Idreserva        int32           `json:"idreserva"`
+	Idtarifa         int32           `json:"idtarifa"`
+	Cantidadpersonas int32           `json:"cantidadpersonas"`
+	Precioaplicado   decimal.Decimal `json:"precioaplicado"`
+	Fechaentrada     time.Time       `json:"fechaentrada"`
+	Fechasalida      time.Time       `json:"fechasalida"`
+	Iva              decimal.Decimal `json:"iva"`
+	Subtotal         decimal.Decimal `json:"subtotal"`
+	Total            decimal.Decimal `json:"total"`
 }
 
 func (q *Queries) CreateDetalleReserva(ctx context.Context, arg CreateDetalleReservaParams) (sql.Result, error) {
@@ -153,23 +155,23 @@ INNER JOIN tarifa t
 `
 
 type GetAllDetalleReservaRow struct {
-	Iddetallereserva     int32     `json:"iddetallereserva"`
-	Nombretipohabitacion string    `json:"nombretipohabitacion"`
-	Numerohabitacion     string    `json:"numerohabitacion"`
-	Nombrerecepcionista  string    `json:"nombrerecepcionista"`
-	Nombrecliente        string    `json:"nombrecliente"`
-	Nombretipocliente    string    `json:"nombretipocliente"`
-	Fechareserva         time.Time `json:"fechareserva"`
-	Estadoreserva        string    `json:"estadoreserva"`
-	Nombretarifa         string    `json:"nombretarifa"`
-	Cantidadpersonas     int32     `json:"cantidadpersonas"`
-	Precioaplicado       string    `json:"precioaplicado"`
-	Fechaentrada         time.Time `json:"fechaentrada"`
-	Fechasalida          time.Time `json:"fechasalida"`
-	Iva                  string    `json:"iva"`
-	Subtotal             string    `json:"subtotal"`
-	Total                string    `json:"total"`
-	Estado               int8      `json:"estado"`
+	Iddetallereserva     int32           `json:"iddetallereserva"`
+	Nombretipohabitacion string          `json:"nombretipohabitacion"`
+	Numerohabitacion     string          `json:"numerohabitacion"`
+	Nombrerecepcionista  string          `json:"nombrerecepcionista"`
+	Nombrecliente        string          `json:"nombrecliente"`
+	Nombretipocliente    string          `json:"nombretipocliente"`
+	Fechareserva         time.Time       `json:"fechareserva"`
+	Estadoreserva        string          `json:"estadoreserva"`
+	Nombretarifa         string          `json:"nombretarifa"`
+	Cantidadpersonas     int32           `json:"cantidadpersonas"`
+	Precioaplicado       decimal.Decimal `json:"precioaplicado"`
+	Fechaentrada         time.Time       `json:"fechaentrada"`
+	Fechasalida          time.Time       `json:"fechasalida"`
+	Iva                  decimal.Decimal `json:"iva"`
+	Subtotal             decimal.Decimal `json:"subtotal"`
+	Total                decimal.Decimal `json:"total"`
+	Estado               int8            `json:"estado"`
 }
 
 func (q *Queries) GetAllDetalleReserva(ctx context.Context) ([]GetAllDetalleReservaRow, error) {
@@ -224,9 +226,9 @@ INNER JOIN tipocliente tc
 WHERE r.idReserva = ?
 `
 
-func (q *Queries) GetClienteByReserva(ctx context.Context, idreserva int32) (string, error) {
+func (q *Queries) GetClienteByReserva(ctx context.Context, idreserva int32) (decimal.Decimal, error) {
 	row := q.db.QueryRowContext(ctx, getClienteByReserva, idreserva)
-	var descuentobase string
+	var descuentobase decimal.Decimal
 	err := row.Scan(&descuentobase)
 	return descuentobase, err
 }
@@ -278,23 +280,23 @@ WHERE dr.idDetalleReserva = ?
 `
 
 type GetDetalleReservaByIDRow struct {
-	Iddetallereserva     int32     `json:"iddetallereserva"`
-	Nombretipohabitacion string    `json:"nombretipohabitacion"`
-	Numerohabitacion     string    `json:"numerohabitacion"`
-	Nombrerecepcionista  string    `json:"nombrerecepcionista"`
-	Nombrecliente        string    `json:"nombrecliente"`
-	Nombretipocliente    string    `json:"nombretipocliente"`
-	Fechareserva         time.Time `json:"fechareserva"`
-	Estadoreserva        string    `json:"estadoreserva"`
-	Nombretarifa         string    `json:"nombretarifa"`
-	Cantidadpersonas     int32     `json:"cantidadpersonas"`
-	Precioaplicado       string    `json:"precioaplicado"`
-	Fechaentrada         time.Time `json:"fechaentrada"`
-	Fechasalida          time.Time `json:"fechasalida"`
-	Iva                  string    `json:"iva"`
-	Subtotal             string    `json:"subtotal"`
-	Total                string    `json:"total"`
-	Estado               int8      `json:"estado"`
+	Iddetallereserva     int32           `json:"iddetallereserva"`
+	Nombretipohabitacion string          `json:"nombretipohabitacion"`
+	Numerohabitacion     string          `json:"numerohabitacion"`
+	Nombrerecepcionista  string          `json:"nombrerecepcionista"`
+	Nombrecliente        string          `json:"nombrecliente"`
+	Nombretipocliente    string          `json:"nombretipocliente"`
+	Fechareserva         time.Time       `json:"fechareserva"`
+	Estadoreserva        string          `json:"estadoreserva"`
+	Nombretarifa         string          `json:"nombretarifa"`
+	Cantidadpersonas     int32           `json:"cantidadpersonas"`
+	Precioaplicado       decimal.Decimal `json:"precioaplicado"`
+	Fechaentrada         time.Time       `json:"fechaentrada"`
+	Fechasalida          time.Time       `json:"fechasalida"`
+	Iva                  decimal.Decimal `json:"iva"`
+	Subtotal             decimal.Decimal `json:"subtotal"`
+	Total                decimal.Decimal `json:"total"`
+	Estado               int8            `json:"estado"`
 }
 
 func (q *Queries) GetDetalleReservaByID(ctx context.Context, iddetallereserva int32) (GetDetalleReservaByIDRow, error) {
@@ -320,6 +322,84 @@ func (q *Queries) GetDetalleReservaByID(ctx context.Context, iddetallereserva in
 		&i.Estado,
 	)
 	return i, err
+}
+
+const getDetallesByReserva = `-- name: GetDetallesByReserva :many
+SELECT
+    dr.idDetalleReserva,
+    th.nombreTipoHab AS nombreTipoHabitacion,
+    h.numeroHabitacion,
+    t.nombreTarifa,
+    tc.descuentoBase,
+    dr.cantidadPersonas,
+    dr.precioAplicado,
+    dr.fechaEntrada,
+    dr.fechaSalida,
+    dr.iva,
+    dr.subTotal,
+    dr.total,
+    dr.estado
+FROM detallereserva dr
+INNER JOIN habitacion h ON dr.idHabitacion = h.idHabitacion
+INNER JOIN tipohabitacion th ON h.idTipoHab = th.idTipoHabitacion
+INNER JOIN tarifa t ON dr.idTarifa = t.idTarifa
+INNER JOIN reserva r ON dr.idReserva = r.idReserva
+INNER JOIN cliente c ON r.idCliente = c.cedula
+INNER JOIN tipocliente tc ON c.idTipoCliente = tc.idTipoCliente
+WHERE dr.idReserva = ? AND dr.estado = 1
+`
+
+type GetDetallesByReservaRow struct {
+	Iddetallereserva     int32           `json:"iddetallereserva"`
+	Nombretipohabitacion string          `json:"nombretipohabitacion"`
+	Numerohabitacion     string          `json:"numerohabitacion"`
+	Nombretarifa         string          `json:"nombretarifa"`
+	Descuentobase        decimal.Decimal `json:"descuentobase"`
+	Cantidadpersonas     int32           `json:"cantidadpersonas"`
+	Precioaplicado       decimal.Decimal `json:"precioaplicado"`
+	Fechaentrada         time.Time       `json:"fechaentrada"`
+	Fechasalida          time.Time       `json:"fechasalida"`
+	Iva                  decimal.Decimal `json:"iva"`
+	Subtotal             decimal.Decimal `json:"subtotal"`
+	Total                decimal.Decimal `json:"total"`
+	Estado               int8            `json:"estado"`
+}
+
+func (q *Queries) GetDetallesByReserva(ctx context.Context, idreserva int32) ([]GetDetallesByReservaRow, error) {
+	rows, err := q.db.QueryContext(ctx, getDetallesByReserva, idreserva)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetDetallesByReservaRow
+	for rows.Next() {
+		var i GetDetallesByReservaRow
+		if err := rows.Scan(
+			&i.Iddetallereserva,
+			&i.Nombretipohabitacion,
+			&i.Numerohabitacion,
+			&i.Nombretarifa,
+			&i.Descuentobase,
+			&i.Cantidadpersonas,
+			&i.Precioaplicado,
+			&i.Fechaentrada,
+			&i.Fechasalida,
+			&i.Iva,
+			&i.Subtotal,
+			&i.Total,
+			&i.Estado,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getEstadoDetalleReserva = `-- name: GetEstadoDetalleReserva :one
@@ -351,6 +431,40 @@ func (q *Queries) GetFechasByIdDetalleReserva(ctx context.Context, iddetallerese
 	var i GetFechasByIdDetalleReservaRow
 	err := row.Scan(&i.Fechaentrada, &i.Fechasalida)
 	return i, err
+}
+
+const getFechasOcupadasByHabitacion = `-- name: GetFechasOcupadasByHabitacion :many
+SELECT fechaEntrada, fechaSalida
+FROM detallereserva
+WHERE idHabitacion = ? AND estado = 1
+`
+
+type GetFechasOcupadasByHabitacionRow struct {
+	Fechaentrada time.Time `json:"fechaentrada"`
+	Fechasalida  time.Time `json:"fechasalida"`
+}
+
+func (q *Queries) GetFechasOcupadasByHabitacion(ctx context.Context, idhabitacion int32) ([]GetFechasOcupadasByHabitacionRow, error) {
+	rows, err := q.db.QueryContext(ctx, getFechasOcupadasByHabitacion, idhabitacion)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFechasOcupadasByHabitacionRow
+	for rows.Next() {
+		var i GetFechasOcupadasByHabitacionRow
+		if err := rows.Scan(&i.Fechaentrada, &i.Fechasalida); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getReservanByIdDetalleReserva = `-- name: GetReservanByIdDetalleReserva :one
@@ -390,9 +504,9 @@ type GetTarifaActivaByTipoHabitacionAndFechaParams struct {
 }
 
 type GetTarifaActivaByTipoHabitacionAndFechaRow struct {
-	Idtarifa     int32  `json:"idtarifa"`
-	Preciobase   string `json:"preciobase"`
-	Nombretarifa string `json:"nombretarifa"`
+	Idtarifa     int32           `json:"idtarifa"`
+	Preciobase   decimal.Decimal `json:"preciobase"`
+	Nombretarifa string          `json:"nombretarifa"`
 }
 
 func (q *Queries) GetTarifaActivaByTipoHabitacionAndFecha(ctx context.Context, arg GetTarifaActivaByTipoHabitacionAndFechaParams) (GetTarifaActivaByTipoHabitacionAndFechaRow, error) {
@@ -431,16 +545,16 @@ WHERE idDetalleReserva = ?
 `
 
 type UpdateDetalleReservaParams struct {
-	Idhabitacion     int32        `json:"idhabitacion"`
-	Idtarifa         int32        `json:"idtarifa"`
-	Cantidadpersonas int32        `json:"cantidadpersonas"`
-	Precioaplicado   string       `json:"precioaplicado"`
-	Fechaentrada     sql.NullTime `json:"fechaentrada"`
-	Fechasalida      sql.NullTime `json:"fechasalida"`
-	Iva              string       `json:"iva"`
-	Subtotal         string       `json:"subtotal"`
-	Total            string       `json:"total"`
-	Iddetallereserva int32        `json:"iddetallereserva"`
+	Idhabitacion     int32           `json:"idhabitacion"`
+	Idtarifa         int32           `json:"idtarifa"`
+	Cantidadpersonas int32           `json:"cantidadpersonas"`
+	Precioaplicado   decimal.Decimal `json:"precioaplicado"`
+	Fechaentrada     sql.NullTime    `json:"fechaentrada"`
+	Fechasalida      sql.NullTime    `json:"fechasalida"`
+	Iva              decimal.Decimal `json:"iva"`
+	Subtotal         decimal.Decimal `json:"subtotal"`
+	Total            decimal.Decimal `json:"total"`
+	Iddetallereserva int32           `json:"iddetallereserva"`
 }
 
 func (q *Queries) UpdateDetalleReserva(ctx context.Context, arg UpdateDetalleReservaParams) (sql.Result, error) {

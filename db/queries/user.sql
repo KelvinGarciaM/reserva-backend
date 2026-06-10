@@ -9,8 +9,8 @@ WHERE email = ? AND estado = 1;
 
 -- name: GetUsers :many
 SELECT id, name, role, email, image, cedula, created_at, updated_at, estado
-FROM users
-WHERE estado = 1;
+FROM users;
+
 
 -- name: UpdateUserWithPassword :execresult
 UPDATE users
@@ -31,11 +31,10 @@ SET
     role   = ?,
     email  = ?,
     image  = ?,
-    cedula = ?,
-    estado = ?
+    cedula = ?
 WHERE id = ?;
 
--- name: DeleteUser :execresult
+-- name: ToggleUserStatus :execresult
 UPDATE users
 SET estado = NOT estado
 WHERE id = ?;

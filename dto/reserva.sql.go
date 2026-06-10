@@ -9,6 +9,8 @@ import (
 	"context"
 	"database/sql"
 	"time"
+
+	decimal "github.com/shopspring/decimal"
 )
 
 const createReserva = `-- name: CreateReserva :execresult
@@ -25,13 +27,13 @@ VALUES (?, ?, ?, ?, ?, ?, ?)
 `
 
 type CreateReservaParams struct {
-	Idrecepcionista string    `json:"idrecepcionista"`
-	Idcliente       string    `json:"idcliente"`
-	Fechareserva    time.Time `json:"fechareserva"`
-	Estadoreserva   string    `json:"estadoreserva"`
-	Iva             string    `json:"iva"`
-	Subtotal        string    `json:"subtotal"`
-	Total           string    `json:"total"`
+	Idrecepcionista string          `json:"idrecepcionista"`
+	Idcliente       string          `json:"idcliente"`
+	Fechareserva    time.Time       `json:"fechareserva"`
+	Estadoreserva   string          `json:"estadoreserva"`
+	Iva             decimal.Decimal `json:"iva"`
+	Subtotal        decimal.Decimal `json:"subtotal"`
+	Total           decimal.Decimal `json:"total"`
 }
 
 func (q *Queries) CreateReserva(ctx context.Context, arg CreateReservaParams) (sql.Result, error) {
@@ -46,41 +48,48 @@ func (q *Queries) CreateReserva(ctx context.Context, arg CreateReservaParams) (s
 	)
 }
 
-const deleteReserva = `-- name: DeleteReserva :execresult
-UPDATE reserva
-SET estado = CASE
-    WHEN estado = 1 THEN 0
-    ELSE 1
-END
-WHERE idReserva = ?
-`
-
-func (q *Queries) DeleteReserva(ctx context.Context, idreserva int32) (sql.Result, error) {
-	return q.db.ExecContext(ctx, deleteReserva, idreserva)
-}
-
 const getReservaById = `-- name: GetReservaById :one
 SELECT
-    idReserva,
-    idRecepcionista,
-    idCliente,
-    fechaReserva,
-    estadoReserva,
-    estado,
-    iva,
-    subTotal,
-    total
-FROM Reserva
-WHERE idReserva = ? AND estado = 1
+    r.idReserva,
+    r.idRecepcionista,
+    r.idCliente,
+    CONCAT(c.nombre, ' ', c.apellidos) AS nombreCliente,
+    CONCAT(re.nombre, ' ', re.apellidos) AS nombreRecepcionista,
+    r.fechaReserva,
+    r.estadoReserva,
+    r.estado,
+    r.iva,
+    r.subTotal,
+    r.total
+FROM Reserva r
+INNER JOIN cliente c ON r.idCliente = c.cedula
+INNER JOIN recepcionista re ON r.idRecepcionista = re.cedula
+WHERE r.idReserva = ? AND r.estado = 1
 `
 
-func (q *Queries) GetReservaById(ctx context.Context, idreserva int32) (Reserva, error) {
+type GetReservaByIdRow struct {
+	Idreserva           int32           `json:"idreserva"`
+	Idrecepcionista     string          `json:"idrecepcionista"`
+	Idcliente           string          `json:"idcliente"`
+	Nombrecliente       string          `json:"nombrecliente"`
+	Nombrerecepcionista string          `json:"nombrerecepcionista"`
+	Fechareserva        time.Time       `json:"fechareserva"`
+	Estadoreserva       string          `json:"estadoreserva"`
+	Estado              int8            `json:"estado"`
+	Iva                 decimal.Decimal `json:"iva"`
+	Subtotal            decimal.Decimal `json:"subtotal"`
+	Total               decimal.Decimal `json:"total"`
+}
+
+func (q *Queries) GetReservaById(ctx context.Context, idreserva int32) (GetReservaByIdRow, error) {
 	row := q.db.QueryRowContext(ctx, getReservaById, idreserva)
-	var i Reserva
+	var i GetReservaByIdRow
 	err := row.Scan(
 		&i.Idreserva,
 		&i.Idrecepcionista,
 		&i.Idcliente,
+		&i.Nombrecliente,
+		&i.Nombrerecepcionista,
 		&i.Fechareserva,
 		&i.Estadoreserva,
 		&i.Estado,
@@ -93,32 +102,52 @@ func (q *Queries) GetReservaById(ctx context.Context, idreserva int32) (Reserva,
 
 const getReservas = `-- name: GetReservas :many
 SELECT
-    idReserva,
-    idRecepcionista,
-    idCliente,
-    fechaReserva,
-    estadoReserva,
-    estado,
-    iva,
-    subTotal,
-    total
-FROM Reserva
-WHERE estado = 1
+    r.idReserva,
+    r.idRecepcionista,
+    r.idCliente,
+    CONCAT(c.nombre, ' ', c.apellidos) AS nombreCliente,
+    CONCAT(re.nombre, ' ', re.apellidos) AS nombreRecepcionista,
+    r.fechaReserva,
+    r.estadoReserva,
+    r.estado,
+    r.iva,
+    r.subTotal,
+    r.total
+FROM Reserva r
+INNER JOIN cliente c ON r.idCliente = c.cedula
+INNER JOIN recepcionista re ON r.idRecepcionista = re.cedula
+WHERE r.estado = 1
 `
 
-func (q *Queries) GetReservas(ctx context.Context) ([]Reserva, error) {
+type GetReservasRow struct {
+	Idreserva           int32           `json:"idreserva"`
+	Idrecepcionista     string          `json:"idrecepcionista"`
+	Idcliente           string          `json:"idcliente"`
+	Nombrecliente       string          `json:"nombrecliente"`
+	Nombrerecepcionista string          `json:"nombrerecepcionista"`
+	Fechareserva        time.Time       `json:"fechareserva"`
+	Estadoreserva       string          `json:"estadoreserva"`
+	Estado              int8            `json:"estado"`
+	Iva                 decimal.Decimal `json:"iva"`
+	Subtotal            decimal.Decimal `json:"subtotal"`
+	Total               decimal.Decimal `json:"total"`
+}
+
+func (q *Queries) GetReservas(ctx context.Context) ([]GetReservasRow, error) {
 	rows, err := q.db.QueryContext(ctx, getReservas)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Reserva
+	var items []GetReservasRow
 	for rows.Next() {
-		var i Reserva
+		var i GetReservasRow
 		if err := rows.Scan(
 			&i.Idreserva,
 			&i.Idrecepcionista,
 			&i.Idcliente,
+			&i.Nombrecliente,
+			&i.Nombrerecepcionista,
 			&i.Fechareserva,
 			&i.Estadoreserva,
 			&i.Estado,
@@ -141,32 +170,52 @@ func (q *Queries) GetReservas(ctx context.Context) ([]Reserva, error) {
 
 const getReservasByCliente = `-- name: GetReservasByCliente :many
 SELECT
-    idReserva,
-    idRecepcionista,
-    idCliente,
-    fechaReserva,
-    estadoReserva,
-    estado,
-    iva,
-    subTotal,
-    total
-FROM Reserva
-WHERE idCliente = ? AND estado = 1
+    r.idReserva,
+    r.idRecepcionista,
+    r.idCliente,
+    CONCAT(c.nombre, ' ', c.apellidos) AS nombreCliente,
+    CONCAT(re.nombre, ' ', re.apellidos) AS nombreRecepcionista,
+    r.fechaReserva,
+    r.estadoReserva,
+    r.estado,
+    r.iva,
+    r.subTotal,
+    r.total
+FROM Reserva r
+INNER JOIN cliente c ON r.idCliente = c.cedula
+INNER JOIN recepcionista re ON r.idRecepcionista = re.cedula
+WHERE r.idCliente = ? AND r.estado = 1
 `
 
-func (q *Queries) GetReservasByCliente(ctx context.Context, idcliente string) ([]Reserva, error) {
+type GetReservasByClienteRow struct {
+	Idreserva           int32           `json:"idreserva"`
+	Idrecepcionista     string          `json:"idrecepcionista"`
+	Idcliente           string          `json:"idcliente"`
+	Nombrecliente       string          `json:"nombrecliente"`
+	Nombrerecepcionista string          `json:"nombrerecepcionista"`
+	Fechareserva        time.Time       `json:"fechareserva"`
+	Estadoreserva       string          `json:"estadoreserva"`
+	Estado              int8            `json:"estado"`
+	Iva                 decimal.Decimal `json:"iva"`
+	Subtotal            decimal.Decimal `json:"subtotal"`
+	Total               decimal.Decimal `json:"total"`
+}
+
+func (q *Queries) GetReservasByCliente(ctx context.Context, idcliente string) ([]GetReservasByClienteRow, error) {
 	rows, err := q.db.QueryContext(ctx, getReservasByCliente, idcliente)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Reserva
+	var items []GetReservasByClienteRow
 	for rows.Next() {
-		var i Reserva
+		var i GetReservasByClienteRow
 		if err := rows.Scan(
 			&i.Idreserva,
 			&i.Idrecepcionista,
 			&i.Idcliente,
+			&i.Nombrecliente,
+			&i.Nombrerecepcionista,
 			&i.Fechareserva,
 			&i.Estadoreserva,
 			&i.Estado,
@@ -189,32 +238,52 @@ func (q *Queries) GetReservasByCliente(ctx context.Context, idcliente string) ([
 
 const getReservasByRecepcionista = `-- name: GetReservasByRecepcionista :many
 SELECT
-    idReserva,
-    idRecepcionista,
-    idCliente,
-    fechaReserva,
-    estadoReserva,
-    estado,
-    iva,
-    subTotal,
-    total
-FROM Reserva
-WHERE idRecepcionista = ? AND estado = 1
+    r.idReserva,
+    r.idRecepcionista,
+    r.idCliente,
+    CONCAT(c.nombre, ' ', c.apellidos) AS nombreCliente,
+    CONCAT(re.nombre, ' ', re.apellidos) AS nombreRecepcionista,
+    r.fechaReserva,
+    r.estadoReserva,
+    r.estado,
+    r.iva,
+    r.subTotal,
+    r.total
+FROM Reserva r
+INNER JOIN cliente c ON r.idCliente = c.cedula
+INNER JOIN recepcionista re ON r.idRecepcionista = re.cedula
+WHERE r.idRecepcionista = ? AND r.estado = 1
 `
 
-func (q *Queries) GetReservasByRecepcionista(ctx context.Context, idrecepcionista string) ([]Reserva, error) {
+type GetReservasByRecepcionistaRow struct {
+	Idreserva           int32           `json:"idreserva"`
+	Idrecepcionista     string          `json:"idrecepcionista"`
+	Idcliente           string          `json:"idcliente"`
+	Nombrecliente       string          `json:"nombrecliente"`
+	Nombrerecepcionista string          `json:"nombrerecepcionista"`
+	Fechareserva        time.Time       `json:"fechareserva"`
+	Estadoreserva       string          `json:"estadoreserva"`
+	Estado              int8            `json:"estado"`
+	Iva                 decimal.Decimal `json:"iva"`
+	Subtotal            decimal.Decimal `json:"subtotal"`
+	Total               decimal.Decimal `json:"total"`
+}
+
+func (q *Queries) GetReservasByRecepcionista(ctx context.Context, idrecepcionista string) ([]GetReservasByRecepcionistaRow, error) {
 	rows, err := q.db.QueryContext(ctx, getReservasByRecepcionista, idrecepcionista)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Reserva
+	var items []GetReservasByRecepcionistaRow
 	for rows.Next() {
-		var i Reserva
+		var i GetReservasByRecepcionistaRow
 		if err := rows.Scan(
 			&i.Idreserva,
 			&i.Idrecepcionista,
 			&i.Idcliente,
+			&i.Nombrecliente,
+			&i.Nombrerecepcionista,
 			&i.Fechareserva,
 			&i.Estadoreserva,
 			&i.Estado,
@@ -233,6 +302,16 @@ func (q *Queries) GetReservasByRecepcionista(ctx context.Context, idrecepcionist
 		return nil, err
 	}
 	return items, nil
+}
+
+const toggleReserva = `-- name: ToggleReserva :execresult
+UPDATE reserva
+SET estado = NOT estado
+WHERE idReserva = ?
+`
+
+func (q *Queries) ToggleReserva(ctx context.Context, idreserva int32) (sql.Result, error) {
+	return q.db.ExecContext(ctx, toggleReserva, idreserva)
 }
 
 const updateEstadoReserva = `-- name: UpdateEstadoReserva :execresult
@@ -265,15 +344,15 @@ WHERE idReserva = ?
 `
 
 type UpdateReservaParams struct {
-	Idrecepcionista string    `json:"idrecepcionista"`
-	Idcliente       string    `json:"idcliente"`
-	Fechareserva    time.Time `json:"fechareserva"`
-	Estadoreserva   string    `json:"estadoreserva"`
-	Estado          int8      `json:"estado"`
-	Iva             string    `json:"iva"`
-	Subtotal        string    `json:"subtotal"`
-	Total           string    `json:"total"`
-	Idreserva       int32     `json:"idreserva"`
+	Idrecepcionista string          `json:"idrecepcionista"`
+	Idcliente       string          `json:"idcliente"`
+	Fechareserva    time.Time       `json:"fechareserva"`
+	Estadoreserva   string          `json:"estadoreserva"`
+	Estado          int8            `json:"estado"`
+	Iva             decimal.Decimal `json:"iva"`
+	Subtotal        decimal.Decimal `json:"subtotal"`
+	Total           decimal.Decimal `json:"total"`
+	Idreserva       int32           `json:"idreserva"`
 }
 
 func (q *Queries) UpdateReserva(ctx context.Context, arg UpdateReservaParams) (sql.Result, error) {

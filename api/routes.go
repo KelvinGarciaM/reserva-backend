@@ -34,14 +34,14 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 
 		// TARIFAS públicas
 		api.GET("/tarifas", h.TarifaHandler.GetTarifas)
-		api.GET("/tarifas/:nombreTarifa", h.TarifaHandler.GetTarifaByNombre)
+		api.GET("/tarifas/nombre/:nombreTarifa", h.TarifaHandler.GetTarifaByNombre)
 
-		api.GET("/tipos-habitacion", h.TipoHabitacionHandler.GetTipoHabitacion)
 		api.POST("/tarifas", h.TarifaHandler.CreateTarifa)
 		api.PATCH("/tarifas/:idTarifa", h.TarifaHandler.UpdateTarifa)
 
 		api.PATCH("/tarifas/:idTarifa/activar", h.TarifaHandler.ActivarTarifa)
 		api.PATCH("/tarifas/:idTarifa/desactivar", h.TarifaHandler.DesactivarTarifa)
+		api.GET("/tarifas/:idTarifa/estadisticas", h.TarifaHandler.GetEstadisticasTarifa)
 	}
 
 	// =========================
@@ -57,9 +57,7 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 			// USERS - solo admin puede modificar/eliminar
 			admin.PUT("/users/:id", h.UserHandler.UpdateUser)
 			// router
-			admin.DELETE("/users/:id", h.UserHandler.DeleteUser)
-
-			// TARIFAS - solo admin puede crear/editar/eliminar
+			admin.DELETE("/users/:id", h.UserHandler.ToggleUserStatus)
 
 			// TIPO CLIENTES - solo admin puede crear/editar/eliminar
 			admin.POST("/tipos-cliente", h.TipoClienteHandler.CreateTipoCliente)
@@ -101,15 +99,19 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 			staff.GET("/reservas/cliente/:id", h.ReservaHandler.GetReservasByCliente)
 			staff.GET("/reservas/recepcionista/:id", h.ReservaHandler.GetReservasByRecepcionista)
 			staff.PUT("/reservas/:id", h.ReservaHandler.UpdateReserva)
-			staff.DELETE("/reservas/:id", h.ReservaHandler.DeleteReserva)
+			staff.DELETE("/reservas/:id", h.ReservaHandler.ToggleReserva)
+			staff.PATCH("/reservas/:id/estado", h.ReservaHandler.UpdateEstadoReserva)
 
 			// DETALLE RESERVA
 			staff.POST("/detalles-reserva", h.DetalleReservaHandler.CreateDetalleReserva)
 			staff.GET("/detalles-reserva", h.DetalleReservaHandler.GetAllDetalleReserva)
 			staff.GET("/detalles-reserva/:idDetalleReserva", h.DetalleReservaHandler.GetDetalleReservaById)
+			staff.GET("/detalles-reserva/reserva/:idReserva", h.DetalleReservaHandler.GetDetallesByReserva)
 			staff.PATCH("/detalles-reserva/:idDetalleReserva", h.DetalleReservaHandler.UpdateDetalleReserva)
 			staff.DELETE("/detalles-reserva/:idDetalleReserva", h.DetalleReservaHandler.DeleteDetalleReserva)
+			staff.GET("/detalles-reserva/habitacion/:idHabitacion/fechas-ocupadas", h.DetalleReservaHandler.GetFechasOcupadasByHabitacion)
 
+			staff.GET("/detalles-reserva/habitacion/:idHabitacion/tarifa", h.DetalleReservaHandler.GetTarifaByHabitacion)
 			// CLIENTES
 			staff.POST("/clientes", h.ClienteHandler.RegisterCliente)
 			staff.GET("/clientes", h.ClienteHandler.GetClientes)
@@ -131,6 +133,7 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 			staff.GET("/recepcionistas/:cedula", h.RecepcionistaHandler.GetRecepcionistaByCedula)
 
 			// TIPO HABITACION - solo lectura
+			staff.GET("/tipos-habitacion", h.TipoHabitacionHandler.GetTipoHabitacion)
 			staff.GET("/tipos-habitacion/:id", h.TipoHabitacionHandler.GetTipoHabitacionByID)
 
 			// HABITACIONES - solo lectura

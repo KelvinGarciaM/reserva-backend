@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"time"
 
@@ -37,11 +38,12 @@ type loginRequest struct {
 }
 
 type loginUser struct {
-	ID    int32  `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Role  string `json:"role"`
-	Image string `json:"image"`
+	ID     int32          `json:"id"`
+	Name   string         `json:"name"`
+	Email  string         `json:"email"`
+	Role   string         `json:"role"`
+	Image  string         `json:"image"`
+	Cedula sql.NullString `json:"cedula"`
 }
 
 type loginResponse struct {
@@ -109,11 +111,12 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, loginResponse{
 		AccessToken: token,
 		User: loginUser{
-			ID:    user.ID,
-			Name:  user.Name,
-			Email: user.Email,
-			Role:  user.Role.String,
-			Image: image,
+			ID:     user.ID,
+			Name:   user.Name,
+			Email:  user.Email,
+			Role:   user.Role.String,
+			Image:  image,
+			Cedula: user.Cedula,
 		},
 	})
 }

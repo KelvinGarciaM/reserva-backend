@@ -13,62 +13,78 @@ VALUES (?, ?, ?, ?, ?, ?, ?);
 
 -- name: GetReservaById :one
 SELECT
-    idReserva,
-    idRecepcionista,
-    idCliente,
-    fechaReserva,
-    estadoReserva,
-    estado,
-    iva,
-    subTotal,
-    total
-FROM Reserva
-WHERE idReserva = ? AND estado = 1;
+    r.idReserva,
+    r.idRecepcionista,
+    r.idCliente,
+    CONCAT(c.nombre, ' ', c.apellidos) AS nombreCliente,
+    CONCAT(re.nombre, ' ', re.apellidos) AS nombreRecepcionista,
+    r.fechaReserva,
+    r.estadoReserva,
+    r.estado,
+    r.iva,
+    r.subTotal,
+    r.total
+FROM Reserva r
+INNER JOIN cliente c ON r.idCliente = c.cedula
+INNER JOIN recepcionista re ON r.idRecepcionista = re.cedula
+WHERE r.idReserva = ? AND r.estado = 1;
 
 
 -- name: GetReservas :many
 SELECT
-    idReserva,
-    idRecepcionista,
-    idCliente,
-    fechaReserva,
-    estadoReserva,
-    estado,
-    iva,
-    subTotal,
-    total
-FROM Reserva
-WHERE estado = 1;
+    r.idReserva,
+    r.idRecepcionista,
+    r.idCliente,
+    CONCAT(c.nombre, ' ', c.apellidos) AS nombreCliente,
+    CONCAT(re.nombre, ' ', re.apellidos) AS nombreRecepcionista,
+    r.fechaReserva,
+    r.estadoReserva,
+    r.estado,
+    r.iva,
+    r.subTotal,
+    r.total
+FROM Reserva r
+INNER JOIN cliente c ON r.idCliente = c.cedula
+INNER JOIN recepcionista re ON r.idRecepcionista = re.cedula
+WHERE r.estado = 1;
 
 
 -- name: GetReservasByCliente :many
 SELECT
-    idReserva,
-    idRecepcionista,
-    idCliente,
-    fechaReserva,
-    estadoReserva,
-    estado,
-    iva,
-    subTotal,
-    total
-FROM Reserva
-WHERE idCliente = ? AND estado = 1;
+    r.idReserva,
+    r.idRecepcionista,
+    r.idCliente,
+    CONCAT(c.nombre, ' ', c.apellidos) AS nombreCliente,
+    CONCAT(re.nombre, ' ', re.apellidos) AS nombreRecepcionista,
+    r.fechaReserva,
+    r.estadoReserva,
+    r.estado,
+    r.iva,
+    r.subTotal,
+    r.total
+FROM Reserva r
+INNER JOIN cliente c ON r.idCliente = c.cedula
+INNER JOIN recepcionista re ON r.idRecepcionista = re.cedula
+WHERE r.idCliente = ? AND r.estado = 1;
 
 
 -- name: GetReservasByRecepcionista :many
 SELECT
-    idReserva,
-    idRecepcionista,
-    idCliente,
-    fechaReserva,
-    estadoReserva,
-    estado,
-    iva,
-    subTotal,
-    total
-FROM Reserva
-WHERE idRecepcionista = ? AND estado = 1;
+    r.idReserva,
+    r.idRecepcionista,
+    r.idCliente,
+    CONCAT(c.nombre, ' ', c.apellidos) AS nombreCliente,
+    CONCAT(re.nombre, ' ', re.apellidos) AS nombreRecepcionista,
+    r.fechaReserva,
+    r.estadoReserva,
+    r.estado,
+    r.iva,
+    r.subTotal,
+    r.total
+FROM Reserva r
+INNER JOIN cliente c ON r.idCliente = c.cedula
+INNER JOIN recepcionista re ON r.idRecepcionista = re.cedula
+WHERE r.idRecepcionista = ? AND r.estado = 1;
 
 
 -- name: UpdateReserva :execresult
@@ -91,10 +107,7 @@ SET estadoReserva = ?
 WHERE idReserva = ?;
 
 
--- name: DeleteReserva :execresult
+-- name: ToggleReserva :execresult
 UPDATE reserva
-SET estado = CASE
-    WHEN estado = 1 THEN 0
-    ELSE 1
-END
-WHERE idReserva = sqlc.arg(idReserva);
+SET estado = NOT estado
+WHERE idReserva = ?;

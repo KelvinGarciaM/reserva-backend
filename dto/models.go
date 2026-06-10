@@ -7,6 +7,8 @@ package dto
 import (
 	"database/sql"
 	"time"
+
+	decimal "github.com/shopspring/decimal"
 )
 
 type Cliente struct {
@@ -20,18 +22,18 @@ type Cliente struct {
 }
 
 type Detallereserva struct {
-	Iddetallereserva int32     `json:"iddetallereserva"`
-	Idhabitacion     int32     `json:"idhabitacion"`
-	Idreserva        int32     `json:"idreserva"`
-	Idtarifa         int32     `json:"idtarifa"`
-	Cantidadpersonas int32     `json:"cantidadpersonas"`
-	Precioaplicado   string    `json:"precioaplicado"`
-	Fechaentrada     time.Time `json:"fechaentrada"`
-	Fechasalida      time.Time `json:"fechasalida"`
-	Iva              string    `json:"iva"`
-	Subtotal         string    `json:"subtotal"`
-	Total            string    `json:"total"`
-	Estado           int8      `json:"estado"`
+	Iddetallereserva int32           `json:"iddetallereserva"`
+	Idhabitacion     int32           `json:"idhabitacion"`
+	Idreserva        int32           `json:"idreserva"`
+	Idtarifa         int32           `json:"idtarifa"`
+	Cantidadpersonas int32           `json:"cantidadpersonas"`
+	Precioaplicado   decimal.Decimal `json:"precioaplicado"`
+	Fechaentrada     time.Time       `json:"fechaentrada"`
+	Fechasalida      time.Time       `json:"fechasalida"`
+	Iva              decimal.Decimal `json:"iva"`
+	Subtotal         decimal.Decimal `json:"subtotal"`
+	Total            decimal.Decimal `json:"total"`
+	Estado           int8            `json:"estado"`
 }
 
 type Habitacion struct {
@@ -51,33 +53,35 @@ type Recepcionistum struct {
 }
 
 type Reserva struct {
-	Idreserva       int32     `json:"idreserva"`
-	Idrecepcionista string    `json:"idrecepcionista"`
-	Idcliente       string    `json:"idcliente"`
-	Fechareserva    time.Time `json:"fechareserva"`
-	Estadoreserva   string    `json:"estadoreserva"`
-	Estado          int8      `json:"estado"`
-	Iva             string    `json:"iva"`
-	Subtotal        string    `json:"subtotal"`
-	Total           string    `json:"total"`
+	Idreserva       int32           `json:"idreserva"`
+	Idrecepcionista string          `json:"idrecepcionista"`
+	Idcliente       string          `json:"idcliente"`
+	Fechareserva    time.Time       `json:"fechareserva"`
+	Estadoreserva   string          `json:"estadoreserva"`
+	Estado          int8            `json:"estado"`
+	Iva             decimal.Decimal `json:"iva"`
+	Subtotal        decimal.Decimal `json:"subtotal"`
+	Total           decimal.Decimal `json:"total"`
 }
 
 type Tarifa struct {
-	Idtarifa         int32        `json:"idtarifa"`
-	Idtipohabitacion int32        `json:"idtipohabitacion"`
-	Preciobase       string       `json:"preciobase"`
-	Nombretarifa     string       `json:"nombretarifa"`
-	Fechainicio      sql.NullTime `json:"fechainicio"`
-	Fechafin         sql.NullTime `json:"fechafin"`
-	Estado           int8         `json:"estado"`
+	Idtarifa          int32           `json:"idtarifa"`
+	Idtipohabitacion  int32           `json:"idtipohabitacion"`
+	Preciobase        decimal.Decimal `json:"preciobase"`
+	Nombretarifa      string          `json:"nombretarifa"`
+	Fechainicio       sql.NullTime    `json:"fechainicio"`
+	Fechafin          sql.NullTime    `json:"fechafin"`
+	Descripcion       sql.NullString  `json:"descripcion"`
+	Desactivadamanual int8            `json:"desactivadamanual"`
+	Estado            int8            `json:"estado"`
 }
 
 type Tipocliente struct {
-	Idtipocliente int32  `json:"idtipocliente"`
-	Nombretipoc   string `json:"nombretipoc"`
-	Descripcion   string `json:"descripcion"`
-	Descuentobase string `json:"descuentobase"`
-	Estado        int8   `json:"estado"`
+	Idtipocliente int32           `json:"idtipocliente"`
+	Nombretipoc   string          `json:"nombretipoc"`
+	Descripcion   string          `json:"descripcion"`
+	Descuentobase decimal.Decimal `json:"descuentobase"`
+	Estado        int8            `json:"estado"`
 }
 
 type Tipohabitacion struct {

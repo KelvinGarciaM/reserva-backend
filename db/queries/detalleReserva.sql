@@ -173,3 +173,36 @@ WHERE idHabitacion = sqlc.arg(idHabitacion)
   AND idDetalleReserva <> sqlc.arg(idDetalleReserva)
   AND fechaEntrada < sqlc.arg(fechaSalida)
   AND fechaSalida > sqlc.arg(fechaEntrada);
+
+
+
+
+-- name: GetDetallesByReserva :many
+SELECT
+    dr.idDetalleReserva,
+    th.nombreTipoHab AS nombreTipoHabitacion,
+    h.numeroHabitacion,
+    t.nombreTarifa,
+    tc.descuentoBase,
+    dr.cantidadPersonas,
+    dr.precioAplicado,
+    dr.fechaEntrada,
+    dr.fechaSalida,
+    dr.iva,
+    dr.subTotal,
+    dr.total,
+    dr.estado
+FROM detallereserva dr
+INNER JOIN habitacion h ON dr.idHabitacion = h.idHabitacion
+INNER JOIN tipohabitacion th ON h.idTipoHab = th.idTipoHabitacion
+INNER JOIN tarifa t ON dr.idTarifa = t.idTarifa
+INNER JOIN reserva r ON dr.idReserva = r.idReserva
+INNER JOIN cliente c ON r.idCliente = c.cedula
+INNER JOIN tipocliente tc ON c.idTipoCliente = tc.idTipoCliente
+WHERE dr.idReserva = ? AND dr.estado = 1;
+
+
+-- name: GetFechasOcupadasByHabitacion :many
+SELECT fechaEntrada, fechaSalida
+FROM detallereserva
+WHERE idHabitacion = ? AND estado = 1;

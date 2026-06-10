@@ -9,6 +9,7 @@ import (
 	"reserva-backend/dto"
 
 	"github.com/gin-gonic/gin"
+	"github.com/shopspring/decimal"
 )
 
 type TipoClienteHandler struct {
@@ -24,17 +25,17 @@ func NewTipoClienteHandler(q *dto.Queries) *TipoClienteHandler {
 ========================= */
 
 type createTipoClienteRequest struct {
-	NombreTipoC   string `json:"nombreTipoC" binding:"required"`
-	Descripcion   string `json:"descripcion"`
-	DescuentoBase string `json:"descuentoBase"`
+	NombreTipoC   string          `json:"nombreTipoC" binding:"required"`
+	Descripcion   string          `json:"descripcion"`
+	DescuentoBase decimal.Decimal `json:"descuentoBase"`
 }
 
 type updateTipoClienteRequest struct {
-	IdTipoCliente int32  `json:"idTipoCliente" binding:"required"`
-	NombreTipoC   string `json:"nombreTipoC" binding:"required"`
-	Descripcion   string `json:"descripcion"`
-	DescuentoBase string `json:"descuentoBase"`
-	Estado        int8   `json:"estado"`
+	IdTipoCliente int32           `json:"idTipoCliente" binding:"required"`
+	NombreTipoC   string          `json:"nombreTipoC" binding:"required"`
+	Descripcion   string          `json:"descripcion"`
+	DescuentoBase decimal.Decimal `json:"descuentoBase"`
+	Estado        int8            `json:"estado"`
 }
 
 type deleteTipoClienteRequest struct {

@@ -150,7 +150,6 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 			Email:  req.Email,
 			Image:  sql.NullString{String: req.Image, Valid: req.Image != ""},
 			Cedula: sql.NullString{String: req.Cedula, Valid: req.Cedula != ""},
-			Estado: req.Estado,
 			ID:     int32(id),
 		})
 	}
@@ -164,7 +163,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "usuario actualizado"})
 }
 
-func (h *UserHandler) DeleteUser(c *gin.Context) {
+func (h *UserHandler) ToggleUserStatus(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -172,9 +171,9 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	result, err := h.q.DeleteUser(c.Request.Context(), int32(id))
+	result, err := h.q.ToggleUserStatus(c.Request.Context(), int32(id))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error eliminando usuario"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error alternando estado del usuario"})
 		return
 	}
 
@@ -184,7 +183,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "usuario eliminado"})
+	c.JSON(http.StatusOK, gin.H{"message": "estado del usuario alternado"})
 }
 
 func (h *UserHandler) UploadUserImg(c *gin.Context) {

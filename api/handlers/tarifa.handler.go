@@ -75,7 +75,7 @@ func (t *TarifaHandler) CreateTarifa(ctx *gin.Context) {
 	}
 	args := dto.CreateTarifaParams{
 		Idtipohabitacion: req.IdTipoHabitacion,
-		Preciobase:       req.PrecioBase.String(),
+		Preciobase:       req.PrecioBase,
 		Nombretarifa:     req.NombreTarifa,
 		Fechainicio:      fechaInicio,
 		Fechafin:         fechaFin,
@@ -95,27 +95,29 @@ func (t *TarifaHandler) CreateTarifa(ctx *gin.Context) {
 
 // formato de respuesta que quiero que tenga el JSON
 type tarifaResponse struct {
-	Idtarifa       int32   `json:"idtarifa"`
-	Nombretarifa   string  `json:"nombretarifa"`
-	Tipohabitacion string  `json:"tipohabitacion"`
-	Preciobase     string  `json:"preciobase"`
-	Fechainicio    *string `json:"fechainicio"`
-	Fechafin       *string `json:"fechafin"`
-	Descripcion    *string `json:"descripcion"`
-	Estado         string  `json:"estado"`
+	Idtarifa          int32           `json:"idtarifa"`
+	Nombretarifa      string          `json:"nombretarifa"`
+	Tipohabitacion    string          `json:"tipohabitacion"`
+	Preciobase        decimal.Decimal `json:"preciobase"`
+	Fechainicio       *string         `json:"fechainicio"`
+	Fechafin          *string         `json:"fechafin"`
+	Descripcion       *string         `json:"descripcion"`
+	Estado            string          `json:"estado"`
+	Desactivadamanual int8            `json:"desactivadaManual"`
 }
 
 // convertir la estructura que me devuelve la db a el nuevo formato
 func newTarifaResponse(t dto.GetTarifasRow) tarifaResponse {
 	return tarifaResponse{
-		Idtarifa:       t.Idtarifa,
-		Nombretarifa:   t.Nombretarifa,
-		Tipohabitacion: t.Tipohabitacion,
-		Preciobase:     t.Preciobase,
-		Fechainicio:    utils.FormatNullDate(t.Fechainicio),
-		Fechafin:       utils.FormatNullDate(t.Fechafin),
-		Descripcion:    utils.ParseNullPtrString(t.Descripcion),
-		Estado:         utils.FormatEstado(t.Estado),
+		Idtarifa:          t.Idtarifa,
+		Nombretarifa:      t.Nombretarifa,
+		Tipohabitacion:    t.Tipohabitacion,
+		Preciobase:        t.Preciobase,
+		Fechainicio:       utils.FormatNullDate(t.Fechainicio),
+		Fechafin:          utils.FormatNullDate(t.Fechafin),
+		Descripcion:       utils.ParseNullPtrString(t.Descripcion),
+		Estado:            utils.FormatEstado(t.Estado),
+		Desactivadamanual: t.Desactivadamanual,
 	}
 }
 func newTarifaByNombreResponse(t dto.GetTarifaByNombreRow) tarifaResponse {
@@ -332,5 +334,26 @@ func (t *TarifaHandler) DesactivarTarifa(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message":         "Tarifa desactivada correctamente",
 		"filas afectadas": filas,
+	})
+}
+
+func (t *TarifaHandler) GetEstadisticasTarifa(ctx *gin.Context) {
+	id := ctx.Param("idTarifa")
+
+	idTarifa, err := utils.ParseInt(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	stats, err := t.q.GetEstadisticasTarifa(ctx, idTarifa)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"totalReservas":      stats.Totalreservas,
+		"ultimaVezUtilizada": utils.FormatDateTime(stats.Ultimavezutilizada),
 	})
 }

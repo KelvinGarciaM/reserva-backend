@@ -37,7 +37,7 @@ func (q *Queries) DeleteHabitacion(ctx context.Context, idhabitacion int32) (sql
 const getHabitacionById = `-- name: GetHabitacionById :one
 SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
-WHERE idHabitacion = ? AND estado = 1
+WHERE idHabitacion = ?
 `
 
 func (q *Queries) GetHabitacionById(ctx context.Context, idhabitacion int32) (Habitacion, error) {
@@ -52,24 +52,58 @@ func (q *Queries) GetHabitacionById(ctx context.Context, idhabitacion int32) (Ha
 	return i, err
 }
 
-const getHabitaciones = `-- name: GetHabitaciones :many
+const getHabitacionByNumero = `-- name: GetHabitacionByNumero :one
 SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
-WHERE estado = 1
+WHERE numeroHabitacion = ?
+LIMIT 1
 `
 
-func (q *Queries) GetHabitaciones(ctx context.Context) ([]Habitacion, error) {
+func (q *Queries) GetHabitacionByNumero(ctx context.Context, numerohabitacion string) (Habitacion, error) {
+	row := q.db.QueryRowContext(ctx, getHabitacionByNumero, numerohabitacion)
+	var i Habitacion
+	err := row.Scan(
+		&i.Idhabitacion,
+		&i.Idtipohab,
+		&i.Numerohabitacion,
+		&i.Estado,
+	)
+	return i, err
+}
+
+const getHabitaciones = `-- name: GetHabitaciones :many
+SELECT
+    h.idHabitacion,
+    h.idTipoHab,
+    th.nombreTipoHab,
+    h.numeroHabitacion,
+    h.estado
+FROM Habitacion h
+INNER JOIN TipoHabitacion th
+    ON h.idTipoHab = th.idTipoHabitacion
+`
+
+type GetHabitacionesRow struct {
+	Idhabitacion     int32  `json:"idhabitacion"`
+	Idtipohab        int32  `json:"idtipohab"`
+	Nombretipohab    string `json:"nombretipohab"`
+	Numerohabitacion string `json:"numerohabitacion"`
+	Estado           int8   `json:"estado"`
+}
+
+func (q *Queries) GetHabitaciones(ctx context.Context) ([]GetHabitacionesRow, error) {
 	rows, err := q.db.QueryContext(ctx, getHabitaciones)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Habitacion
+	var items []GetHabitacionesRow
 	for rows.Next() {
-		var i Habitacion
+		var i GetHabitacionesRow
 		if err := rows.Scan(
 			&i.Idhabitacion,
 			&i.Idtipohab,
+			&i.Nombretipohab,
 			&i.Numerohabitacion,
 			&i.Estado,
 		); err != nil {
@@ -89,7 +123,7 @@ func (q *Queries) GetHabitaciones(ctx context.Context) ([]Habitacion, error) {
 const getHabitacionesByTipo = `-- name: GetHabitacionesByTipo :many
 SELECT idHabitacion, idTipoHab, numeroHabitacion, estado
 FROM Habitacion
-WHERE idTipoHab = ? AND estado = 1
+WHERE idTipoHab = ?
 `
 
 func (q *Queries) GetHabitacionesByTipo(ctx context.Context, idtipohab int32) ([]Habitacion, error) {

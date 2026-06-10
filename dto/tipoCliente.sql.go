@@ -8,6 +8,8 @@ package dto
 import (
 	"context"
 	"database/sql"
+
+	decimal "github.com/shopspring/decimal"
 )
 
 const createTipoCliente = `-- name: CreateTipoCliente :execresult
@@ -20,9 +22,9 @@ VALUES (?, ?, ?)
 `
 
 type CreateTipoClienteParams struct {
-	Nombretipoc   string `json:"nombretipoc"`
-	Descripcion   string `json:"descripcion"`
-	Descuentobase string `json:"descuentobase"`
+	Nombretipoc   string          `json:"nombretipoc"`
+	Descripcion   string          `json:"descripcion"`
+	Descuentobase decimal.Decimal `json:"descuentobase"`
 }
 
 func (q *Queries) CreateTipoCliente(ctx context.Context, arg CreateTipoClienteParams) (sql.Result, error) {
@@ -172,11 +174,11 @@ WHERE idTipoCliente = ?
 `
 
 type UpdateTipoClienteParams struct {
-	Nombretipoc   string `json:"nombretipoc"`
-	Descripcion   string `json:"descripcion"`
-	Descuentobase string `json:"descuentobase"`
-	Estado        int8   `json:"estado"`
-	Idtipocliente int32  `json:"idtipocliente"`
+	Nombretipoc   string          `json:"nombretipoc"`
+	Descripcion   string          `json:"descripcion"`
+	Descuentobase decimal.Decimal `json:"descuentobase"`
+	Estado        int8            `json:"estado"`
+	Idtipocliente int32           `json:"idtipocliente"`
 }
 
 func (q *Queries) UpdateTipoCliente(ctx context.Context, arg UpdateTipoClienteParams) (sql.Result, error) {

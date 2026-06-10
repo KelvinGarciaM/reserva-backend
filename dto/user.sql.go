@@ -36,16 +36,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 	return err
 }
 
-const deleteUser = `-- name: DeleteUser :execresult
-UPDATE users
-SET estado = NOT estado
-WHERE id = ?
-`
-
-func (q *Queries) DeleteUser(ctx context.Context, id int32) (sql.Result, error) {
-	return q.db.ExecContext(ctx, deleteUser, id)
-}
-
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, name, role, email, password, image, cedula, created_at, updated_at, estado
 FROM users
@@ -86,7 +76,6 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 const getUsers = `-- name: GetUsers :many
 SELECT id, name, role, email, image, cedula, created_at, updated_at, estado
 FROM users
-WHERE estado = 1
 `
 
 type GetUsersRow struct {
@@ -134,6 +123,16 @@ func (q *Queries) GetUsers(ctx context.Context) ([]GetUsersRow, error) {
 	return items, nil
 }
 
+const toggleUserStatus = `-- name: ToggleUserStatus :execresult
+UPDATE users
+SET estado = NOT estado
+WHERE id = ?
+`
+
+func (q *Queries) ToggleUserStatus(ctx context.Context, id int32) (sql.Result, error) {
+	return q.db.ExecContext(ctx, toggleUserStatus, id)
+}
+
 const updateUserWithPassword = `-- name: UpdateUserWithPassword :execresult
 UPDATE users
 SET
@@ -178,8 +177,7 @@ SET
     role   = ?,
     email  = ?,
     image  = ?,
-    cedula = ?,
-    estado = ?
+    cedula = ?
 WHERE id = ?
 `
 
@@ -189,7 +187,6 @@ type UpdateUserWithoutPasswordParams struct {
 	Email  string         `json:"email"`
 	Image  sql.NullString `json:"image"`
 	Cedula sql.NullString `json:"cedula"`
-	Estado int8           `json:"estado"`
 	ID     int32          `json:"id"`
 }
 
@@ -200,7 +197,6 @@ func (q *Queries) UpdateUserWithoutPassword(ctx context.Context, arg UpdateUserW
 		arg.Email,
 		arg.Image,
 		arg.Cedula,
-		arg.Estado,
 		arg.ID,
 	)
 }
