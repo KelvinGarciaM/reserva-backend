@@ -2,11 +2,13 @@ package handlers
 
 //import package apifunc
 import (
+	"database/sql"
 	"net/http"
 	"reserva-backend/dto"
 	"reserva-backend/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/shopspring/decimal"
 )
 
 type TarifaHandler struct {
@@ -18,19 +20,22 @@ func NewTarifaHandler(q *dto.Queries) *TarifaHandler {
 }
 
 type createTarifaRequest struct {
-	IdTipoHabitacion int32   `json:"idTipoHabitacion" binding:"required"`
-	PrecioBase       string  `json:"precioBase" binding:"required"`
-	NombreTarifa     string  `json:"nombreTarifa" binding:"required"`
-	FechaInicio      *string `json:"fechaInicio"`
-	FechaFin         *string `json:"fechaFin"`
+	IdTipoHabitacion int32           `json:"idTipoHabitacion" binding:"required"`
+	PrecioBase       decimal.Decimal `json:"precioBase" binding:"required"`
+	NombreTarifa     string          `json:"nombreTarifa" binding:"required"`
+	FechaInicio      *string         `json:"fechaInicio"`
+	FechaFin         *string         `json:"fechaFin"`
+	Descripcion      *string         `json:"descripcion"`
+	Estado           int8            `json:"estado"`
 }
 
 type UpdateTarifaRequest struct {
-	IdTipoHabitacion *int32  `json:"idTipoHabitacion"`
-	PrecioBase       *string `json:"precioBase"`
-	NombreTarifa     *string `json:"nombreTarifa"`
-	FechaInicio      *string `json:"fechaInicio"`
-	FechaFin         *string `json:"fechaFin"`
+	IdTipoHabitacion *int32           `json:"idTipoHabitacion"`
+	PrecioBase       *decimal.Decimal `json:"precioBase"`
+	NombreTarifa     *string          `json:"nombreTarifa"`
+	FechaInicio      *string          `json:"fechaInicio"`
+	FechaFin         *string          `json:"fechaFin"`
+	Descripcion      *string          `json:"descripcion"`
 }
 
 type deleteTarifaRequest struct {
@@ -70,10 +75,12 @@ func (t *TarifaHandler) CreateTarifa(ctx *gin.Context) {
 	}
 	args := dto.CreateTarifaParams{
 		Idtipohabitacion: req.IdTipoHabitacion,
-		Preciobase:       req.PrecioBase,
+		Preciobase:       req.PrecioBase.String(),
 		Nombretarifa:     req.NombreTarifa,
 		Fechainicio:      fechaInicio,
 		Fechafin:         fechaFin,
+		Descripcion:      utils.ParseNullString(req.Descripcion),
+		Estado:           req.Estado,
 	}
 	tarifa, err := t.q.CreateTarifa(ctx, args)
 	if err != nil {
@@ -81,7 +88,9 @@ func (t *TarifaHandler) CreateTarifa(ctx *gin.Context) {
 		return
 	}
 	var lastId, _ = tarifa.LastInsertId()
-	ctx.JSON(http.StatusOK, gin.H{"generated_id": lastId})
+	ctx.JSON(http.StatusOK, gin.H{
+		"message":      "Tarifa creada correctamente",
+		"generated_id": lastId})
 }
 
 // formato de respuesta que quiero que tenga el JSON
@@ -92,6 +101,7 @@ type tarifaResponse struct {
 	Preciobase     string  `json:"preciobase"`
 	Fechainicio    *string `json:"fechainicio"`
 	Fechafin       *string `json:"fechafin"`
+	Descripcion    *string `json:"descripcion"`
 	Estado         string  `json:"estado"`
 }
 
@@ -104,6 +114,7 @@ func newTarifaResponse(t dto.GetTarifasRow) tarifaResponse {
 		Preciobase:     t.Preciobase,
 		Fechainicio:    utils.FormatNullDate(t.Fechainicio),
 		Fechafin:       utils.FormatNullDate(t.Fechafin),
+		Descripcion:    utils.ParseNullPtrString(t.Descripcion),
 		Estado:         utils.FormatEstado(t.Estado),
 	}
 }
@@ -130,7 +141,16 @@ func newTarifaByNombreResponse(t dto.GetTarifaByNombreRow) tarifaResponse {
 // @Failure 500 {object} map[string]string
 // @Router /tarifas [get]
 func (t *TarifaHandler) GetTarifas(ctx *gin.Context) {
-
+	err := t.q.UpdateTarifasVencidasAutomatico(ctx)
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	errr := t.q.ActivarTarifasVigentesAutomatico(ctx)
+	if errr != nil {
+		ctx.JSON(500, gin.H{"error": errr.Error()})
+		return
+	}
 	tarifas, err := t.q.GetTarifas(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -198,6 +218,7 @@ func (t *TarifaHandler) UpdateTarifa(ctx *gin.Context) {
 	if req.NombreTarifa == nil &&
 		req.PrecioBase == nil &&
 		req.FechaInicio == nil &&
+		req.Descripcion == nil &&
 		req.FechaFin == nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "Debe enviar al menos un campo para actualizar",
@@ -221,7 +242,14 @@ func (t *TarifaHandler) UpdateTarifa(ctx *gin.Context) {
 		return
 	}
 	idTipoHabitacion := utils.ParseNullIdTipoHabitacion(req.IdTipoHabitacion)
-	precioBase := utils.ParseNullString(req.PrecioBase)
+	var precioBase sql.NullString
+
+	if req.PrecioBase != nil {
+		precioBase = sql.NullString{
+			String: req.PrecioBase.String(),
+			Valid:  true,
+		}
+	}
 	nombreTarifa := utils.ParseNullString(req.NombreTarifa)
 	args := dto.UpdateTarifaParams{
 		Idtipohabitacion: idTipoHabitacion,
@@ -229,6 +257,7 @@ func (t *TarifaHandler) UpdateTarifa(ctx *gin.Context) {
 		Nombretarifa:     nombreTarifa,
 		Fechainicio:      fechaInicio,
 		Fechafin:         fechaFin,
+		Descripcion:      utils.ParseNullString(req.Descripcion),
 		Idtarifa:         idTarifa,
 	}
 
@@ -254,21 +283,54 @@ func (t *TarifaHandler) UpdateTarifa(ctx *gin.Context) {
 // @Failure 401 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /tarifas/{idTarifa} [delete]
-func (t *TarifaHandler) DeleteTarifa(ctx *gin.Context) {
+func (t *TarifaHandler) ActivarTarifa(ctx *gin.Context) {
+	id := ctx.Param("idTarifa")
 
-	var idTarifaS = ctx.Param("idTarifa")
-	var id, err = utils.ParseInt(idTarifaS)
-
+	idTarifa, err := utils.ParseInt(id)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	result, err := t.q.DeleteTarifa(ctx, id)
+	result, err := t.q.ActivarTarifaSiEstaVigentePorUsuario(ctx, idTarifa)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	var fila, _ = result.RowsAffected()
-	ctx.JSON(http.StatusOK, gin.H{"filas afectadas": fila})
+
+	filas, _ := result.RowsAffected()
+
+	if filas == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "La tarifa solo puede activarse si la fecha actual está dentro del rango de vigencia",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "Tarifa activada correctamente",
+	})
+}
+
+func (t *TarifaHandler) DesactivarTarifa(ctx *gin.Context) {
+	id := ctx.Param("idTarifa")
+
+	idTarifa, err := utils.ParseInt(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	result, err := t.q.DesactivarTarifaPorUsuario(ctx, idTarifa)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	filas, _ := result.RowsAffected()
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message":         "Tarifa desactivada correctamente",
+		"filas afectadas": filas,
+	})
 }

@@ -35,6 +35,13 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 		// TARIFAS públicas
 		api.GET("/tarifas", h.TarifaHandler.GetTarifas)
 		api.GET("/tarifas/:nombreTarifa", h.TarifaHandler.GetTarifaByNombre)
+
+		api.GET("/tipos-habitacion", h.TipoHabitacionHandler.GetTipoHabitacion)
+		api.POST("/tarifas", h.TarifaHandler.CreateTarifa)
+		api.PATCH("/tarifas/:idTarifa", h.TarifaHandler.UpdateTarifa)
+
+		api.PATCH("/tarifas/:idTarifa/activar", h.TarifaHandler.ActivarTarifa)
+		api.PATCH("/tarifas/:idTarifa/desactivar", h.TarifaHandler.DesactivarTarifa)
 	}
 
 	// =========================
@@ -53,9 +60,6 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 			admin.DELETE("/users/:id", h.UserHandler.DeleteUser)
 
 			// TARIFAS - solo admin puede crear/editar/eliminar
-			admin.POST("/tarifas", h.TarifaHandler.CreateTarifa)
-			admin.PATCH("/tarifas/:idTarifa", h.TarifaHandler.UpdateTarifa)
-			admin.DELETE("/tarifas/:idTarifa", h.TarifaHandler.DeleteTarifa)
 
 			// TIPO CLIENTES - solo admin puede crear/editar/eliminar
 			admin.POST("/tipos-cliente", h.TipoClienteHandler.CreateTipoCliente)
@@ -127,7 +131,6 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 			staff.GET("/recepcionistas/:cedula", h.RecepcionistaHandler.GetRecepcionistaByCedula)
 
 			// TIPO HABITACION - solo lectura
-			staff.GET("/tipos-habitacion", h.TipoHabitacionHandler.GetTipoHabitacion)
 			staff.GET("/tipos-habitacion/:id", h.TipoHabitacionHandler.GetTipoHabitacionByID)
 
 			// HABITACIONES - solo lectura
