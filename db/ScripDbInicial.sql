@@ -115,7 +115,6 @@ CREATE TABLE reserva(
 -- TARIFA
 -- =========================
 CREATE TABLE tarifa(
-<<<<<<< HEAD
     idTarifa            INT AUTO_INCREMENT NOT NULL,
     idTipoHabitacion    INT NOT NULL,
     precioBase          DECIMAL(10,2) NOT NULL,
@@ -125,17 +124,6 @@ CREATE TABLE tarifa(
     descripcion         TEXT,
     desactivadaManual   TINYINT DEFAULT 0,
     estado              TINYINT NOT NULL DEFAULT 1,
-=======
-	idTarifa			INT AUTO_INCREMENT NOT NULL,
-    idTipoHabitacion	INT NOT NULL,
-    precioBase			DECIMAL(10,2) NOT NULL,
-    nombreTarifa		VARCHAR(45) NOT NULL,
-    fechaInicio			DATE,
-    fechaFin			DATE,
-    descripcion         TEXT,
-    desactivadaManual   TINYINT DEFAULT 0,
-    estado				TINYINT NOT NULL DEFAULT 1,
->>>>>>> ff58b39fd7cec3e5ec8ce1ed27fc07a8d1446c16
 
     CONSTRAINT pk_tarifa 
     PRIMARY KEY(idTarifa),
@@ -253,7 +241,6 @@ VALUES
 ('112340001', 'Gerald',  'Araya Jimenez',  '8888-0002', 'gerald@hotel.com'),
 ('223450002', 'Andy',    'Alvarado',       '8888-0003', 'andy@hotel.com');
 
-<<<<<<< HEAD
 -- USERS
 INSERT INTO users(name, role, email, password, cedula,image)
 VALUES
@@ -261,37 +248,7 @@ VALUES
 ('Melissa Tijerino',      'Administrador',          'melissa@hotel.com',  '', NULL, '10febf7d-34f9-4613-91ea-b5dfd46711e6_Melissa.png'),
 ('Gerald Araya Jimenez',  'Recepcionista',  'gerald@hotel.com',   '', '112340001', '643e8b36-2515-4635-ad4b-e98e26cc8653_Gerald.png'),
 ('Andy Alvarado',         'Recepcionista',  'andy@hotel.com',     '', '223450002', '6a85f430-85dd-43c2-873e-e7550c764d39_Andy.png');
-=======
--- RESERVA
-INSERT INTO reserva(
-    idRecepcionista,
-    idCliente,
-    fechaReserva,
-    estadoReserva,
-    iva,
-    subTotal,
-    total
-)
-VALUES
-(
-    '11111111',
-    '10101010',
-    NOW(),
-    'Activa',
-    4550.00,
-    35000.00,
-    39550.00
-),
-(
-    '22222222',
-    '20202020',
-    NOW(),
-    'Pendiente',
-    7150.00,
-    55000.00,
-    62150.00
-);
->>>>>>> ff58b39fd7cec3e5ec8ce1ed27fc07a8d1446c16
+
 
 -- TARIFA
 INSERT INTO tarifa(idTipoHabitacion, precioBase, nombreTarifa, fechaInicio, fechaFin, descripcion)
