@@ -122,35 +122,40 @@ func (h *HabitacionHandler) GetHabitacionesByTipoHab(c *gin.Context) {
 func (h *HabitacionHandler) UpdateHabitacion(c *gin.Context) {
 	id, ok := getIDHabitacion(c)
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
 		return
 	}
+
 	var req updateHabitacionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	_, err := h.q.GetHabitacionById(c, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Habitación no encontrada",
+			"id":    id,
+		})
+		return
+	}
+
 	args := dto.UpdateHabitacionParams{
 		Idtipohab:        req.IdTipoHab,
 		Numerohabitacion: req.NumeroHabitacion,
 		Estado:           req.Estado,
 		Idhabitacion:     id,
 	}
-	result, err := h.q.UpdateHabitacion(c, args)
+
+	_, err = h.q.UpdateHabitacion(c, args)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error":   "Habitación no encontrada",
-			"id":      id,
-			"details": "verifique si el ID existe o si fue eliminada",
-		})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "Habitación actualizada exitosamente"})
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Habitación actualizada exitosamente",
+	})
 }
 
 // DELETE LOGICO
