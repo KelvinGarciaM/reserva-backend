@@ -75,11 +75,26 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 			admin.POST("/tipos-habitacion", h.TipoHabitacionHandler.RegisterTipoHabitacion)
 			admin.PUT("/tipos-habitacion/:id", h.TipoHabitacionHandler.UpdateTipoHabitacion)
 			admin.DELETE("/tipos-habitacion/:id", h.TipoHabitacionHandler.DeleteTipoHabitacion)
-
+			admin.GET("/tipos-habitacion/:id", h.TipoHabitacionHandler.GetTipoHabitacionByID)
+			admin.GET("/tipos-habitacion", h.TipoHabitacionHandler.GetTipoHabitacion)
 			// HABITACIONES - solo admin puede crear/editar/eliminar
 			admin.POST("/habitaciones", h.HabitacionHandler.RegisterHabitacion)
 			admin.PUT("/habitaciones/:id", h.HabitacionHandler.UpdateHabitacion)
 			admin.DELETE("/habitaciones/:id", h.HabitacionHandler.DeleteHabitacion)
+			// TIPO CLIENTES - solo lectura
+			admin.GET("/tipos-cliente", h.TipoClienteHandler.GetTipoClientes)
+			admin.GET("/tipos-cliente/buscar", h.TipoClienteHandler.SearchTipoClientes)
+			admin.GET("/tipos-cliente/:id", h.TipoClienteHandler.GetTipoClienteById)
+
+			// RECEPCIONISTAS - solo lectura
+			admin.GET("/recepcionistas", h.RecepcionistaHandler.GetRecepcionistas)
+			admin.GET("/recepcionistas/buscar", h.RecepcionistaHandler.SearchRecepcionistas)
+			admin.GET("/recepcionistas/:cedula", h.RecepcionistaHandler.GetRecepcionistaByCedula)
+
+			// HABITACIONES - solo lectura
+			admin.GET("/habitaciones", h.HabitacionHandler.GetHabitaciones)
+			admin.GET("/habitaciones/:id", h.HabitacionHandler.GetHabitacionByID)
+			admin.GET("/habitaciones/tipo/:id", h.HabitacionHandler.GetHabitacionesByTipoHab)
 		}
 
 		// ========== ADMIN + RECEPCIONISTA ==========
@@ -122,23 +137,6 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 			staff.DELETE("/clientes", h.ClienteHandler.DeleteCliente)
 			staff.PUT("/clientes/toggle", h.ClienteHandler.ToggleClienteEstado)
 
-			// TIPO CLIENTES - solo lectura
-			staff.GET("/tipos-cliente", h.TipoClienteHandler.GetTipoClientes)
-			staff.GET("/tipos-cliente/buscar", h.TipoClienteHandler.SearchTipoClientes)
-			staff.GET("/tipos-cliente/:id", h.TipoClienteHandler.GetTipoClienteById)
-
-			// RECEPCIONISTAS - solo lectura
-			staff.GET("/recepcionistas", h.RecepcionistaHandler.GetRecepcionistas)
-			staff.GET("/recepcionistas/buscar", h.RecepcionistaHandler.SearchRecepcionistas)
-			staff.GET("/recepcionistas/:cedula", h.RecepcionistaHandler.GetRecepcionistaByCedula)
-
-			// TIPO HABITACION - solo lectura
-			staff.GET("/tipos-habitacion/:id", h.TipoHabitacionHandler.GetTipoHabitacionByID)
-
-			// HABITACIONES - solo lectura
-			staff.GET("/habitaciones", h.HabitacionHandler.GetHabitaciones)
-			staff.GET("/habitaciones/:id", h.HabitacionHandler.GetHabitacionByID)
-			staff.GET("/habitaciones/tipo/:id", h.HabitacionHandler.GetHabitacionesByTipoHab)
 		}
 	}
 }
