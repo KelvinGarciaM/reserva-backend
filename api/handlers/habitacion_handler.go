@@ -253,3 +253,12 @@ func (h *HabitacionHandler) DeleteHabitacion(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Habitación eliminada exitosamente"})
 }
+
+func (h *HabitacionHandler) GetHabitacionesDisponibles(c *gin.Context) {
+	habitaciones, err := h.q.GetHabitacionesDisponibles(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"habitaciones": habitaciones})
+}

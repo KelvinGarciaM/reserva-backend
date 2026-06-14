@@ -93,6 +93,7 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 
 			// HABITACIONES - solo lectura
 			admin.GET("/habitaciones", h.HabitacionHandler.GetHabitaciones)
+			admin.GET("/habitaciones/disponibles", h.HabitacionHandler.GetHabitacionesDisponibles)
 			admin.GET("/habitaciones/:id", h.HabitacionHandler.GetHabitacionByID)
 			admin.GET("/habitaciones/tipo/:id", h.HabitacionHandler.GetHabitacionesByTipoHab)
 		}

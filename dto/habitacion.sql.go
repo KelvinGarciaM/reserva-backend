@@ -8,6 +8,8 @@ package dto
 import (
 	"context"
 	"database/sql"
+
+	decimal "github.com/shopspring/decimal"
 )
 
 const createHabitacion = `-- name: CreateHabitacion :execresult
@@ -140,6 +142,68 @@ func (q *Queries) GetHabitacionesByTipo(ctx context.Context, idtipohab int32) ([
 			&i.Idtipohab,
 			&i.Numerohabitacion,
 			&i.Estado,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getHabitacionesDisponibles = `-- name: GetHabitacionesDisponibles :many
+SELECT
+    h.idHabitacion,
+    h.numeroHabitacion,
+    th.nombreTipoHab,
+    t.idTarifa,
+    t.nombreTarifa,
+    t.precioBase,
+    th.capacidadMaxima
+FROM habitacion h
+INNER JOIN tipohabitacion th
+    ON h.idTipoHab = th.idTipoHabitacion
+INNER JOIN tarifa t
+    ON th.idTipoHabitacion = t.idTipoHabitacion
+WHERE h.estado = 1
+  AND th.estado = 1
+  AND t.estado = 1
+  AND t.desactivadaManual = 0
+  AND CURDATE() BETWEEN t.fechaInicio AND t.fechaFin
+`
+
+type GetHabitacionesDisponiblesRow struct {
+	Idhabitacion     int32           `json:"idhabitacion"`
+	Numerohabitacion string          `json:"numerohabitacion"`
+	Nombretipohab    string          `json:"nombretipohab"`
+	Idtarifa         int32           `json:"idtarifa"`
+	Nombretarifa     string          `json:"nombretarifa"`
+	Preciobase       decimal.Decimal `json:"preciobase"`
+	Capacidadmaxima  int32           `json:"capacidadmaxima"`
+}
+
+func (q *Queries) GetHabitacionesDisponibles(ctx context.Context) ([]GetHabitacionesDisponiblesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getHabitacionesDisponibles)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetHabitacionesDisponiblesRow
+	for rows.Next() {
+		var i GetHabitacionesDisponiblesRow
+		if err := rows.Scan(
+			&i.Idhabitacion,
+			&i.Numerohabitacion,
+			&i.Nombretipohab,
+			&i.Idtarifa,
+			&i.Nombretarifa,
+			&i.Preciobase,
+			&i.Capacidadmaxima,
 		); err != nil {
 			return nil, err
 		}
