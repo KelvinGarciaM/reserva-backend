@@ -17,6 +17,7 @@ WORKDIR /app
 RUN apk add --no-cache tzdata
 
 COPY --from=builder /app/main .
+COPY --from=builder /app/utils/images ./utils/images
 
 EXPOSE 8080
 

@@ -150,31 +150,6 @@ CREATE TABLE detallereserva(
 
 )ENGINE=INNODB;
 
-
--- CREATE TABLE users(
--- 	id				INT AUTO_INCREMENT NOT NULL,
---     name			VARCHAR(100) NOT NULL,
---     role			VARCHAR(30) DEFAULT 'user',
---     email			VARCHAR(150) NOT NULL,
---     password		VARCHAR(255) NOT NULL,
---     estado			TINYINT NOT NULL DEFAULT 1,
---     image			VARCHAR(255),
-
---     created_at		TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     updated_at		TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
---     				ON UPDATE CURRENT_TIMESTAMP,
-
---     CONSTRAINT pk_users 
---     PRIMARY KEY(id),
-
---     CONSTRAINT uq_users_email 
---     UNIQUE(email)
-
--- )ENGINE=INNODB;
-
-
-
-
 CREATE TABLE users(
     id              INT AUTO_INCREMENT NOT NULL,
     name            VARCHAR(100) NOT NULL,
