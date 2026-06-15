@@ -204,7 +204,7 @@ func (h *RecepcionistaHandler) UpdateRecepcionista(c *gin.Context) {
 		return
 	}
 
-	result, err := h.q.UpdateRecepcionista(c.Request.Context(), dto.UpdateRecepcionistaParams{
+	_, err := h.q.UpdateRecepcionista(c.Request.Context(), dto.UpdateRecepcionistaParams{
 		Nombre:    req.Nombre,
 		Apellidos: req.Apellidos,
 		Telefono:  req.Telefono,
@@ -215,12 +215,6 @@ func (h *RecepcionistaHandler) UpdateRecepcionista(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error actualizando"})
-		return
-	}
-
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "no existe"})
 		return
 	}
 
