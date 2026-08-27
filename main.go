@@ -7,12 +7,13 @@ import (
 	"reserva-backend/api"
 	docs "reserva-backend/docs"
 	"reserva-backend/dto"
+	"reserva-backend/repository"
 	"reserva-backend/utils"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/microsoft/go-mssqldb"
 )
 
 // @title API de Reservas
@@ -37,20 +38,42 @@ func main() {
 	// 2. Conexión a la base de datos
 	conn, err := sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
-		log.Fatal("Error conectando DB:", err)
+		log.Fatal("Error preparando la conexión:", err)
+	}
+	defer conn.Close()
+
+	if err := conn.Ping(); err != nil {
+		log.Fatal("No fue posible conectar con SQL Server:", err)
 	}
 
-	// 3. SQLC
+	log.Println("Conexión con SQL Server establecida correctamente")
+	// 3. SQLC temporalmente continua para los modulos donde no hemos hecho la migracion
 	dbtx := dto.New(conn)
+	//esto es neuvo para la migracion de mysql a sql server
+	tipoHabitacionRepository :=
+		repository.NewTipoHabitacionRepository(conn)
+	usuarioRepository :=
+		repository.NewUsuarioRepository(conn)
 
-	// 4. Crear admin por defecto
-	err = utils.SeedAdmin(dbtx, config)
+	err = utils.SeedAdmin(
+		usuarioRepository,
+		config,
+	)
 	if err != nil {
-		log.Fatal("Error creando admin:", err)
+		log.Fatal("Error creando administrador:", err)
 	}
 
+	log.Println(
+		"Administrador verificado correctamente:",
+		config.AdminEmail,
+	)
 	// 5. Server
-	server, err := api.NewServer(dbtx, config.TokenSymmetricKey)
+	server, err := api.NewServer(
+		dbtx,
+		tipoHabitacionRepository,
+		usuarioRepository,
+		config.TokenSymmetricKey,
+	)
 	if err != nil {
 		log.Fatal("Error iniciando server:", err)
 	}
