@@ -1,22 +1,27 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
-	"reserva-backend/dto"
 	"strconv"
 
+	"reserva-backend/repository"
+
 	"github.com/gin-gonic/gin"
+	mssql "github.com/microsoft/go-mssqldb"
 )
 
 type TipoHabitacionHandler struct {
-	q *dto.Queries
+	repository *repository.TipoHabitacionRepository
 }
 
-func NewTipoHabitacionHandler(q *dto.Queries) *TipoHabitacionHandler {
-	return &TipoHabitacionHandler{q}
+func NewTipoHabitacionHandler(
+	repository *repository.TipoHabitacionRepository,
+) *TipoHabitacionHandler {
+	return &TipoHabitacionHandler{
+		repository: repository,
+	}
 }
-
-//REQUESTS
 
 type registerTipoHabitacionRequest struct {
 	NombreTipoHab string `json:"nombreTipoHab" binding:"required"`
@@ -31,206 +36,196 @@ type updateTipoHabitacionRequest struct {
 	Estado        int8   `json:"estado"`
 }
 
-// HELPERS
 func getIDHab(c *gin.Context) (int32, bool) {
 	idParam := c.Param("id")
+
 	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "El ID debe ser un número mayor que cero",
+		})
 		return 0, false
 	}
+
 	return int32(id), true
 }
 
-// Handler
-// Create
-// RegisterTipoHabitacion godoc
-// @Summary Crear tipo de habitación
-// @Description Registra un nuevo tipo de habitación en el sistema
-// @Tags tipos-habitacion
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param tipoHabitacion body registerTipoHabitacionRequest true "Datos del tipo de habitación"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /tipos-habitacion [post]
-func (h *TipoHabitacionHandler) RegisterTipoHabitacion(c *gin.Context) {
+func responderErrorSQLServer(c *gin.Context, err error) {
+	var sqlServerError mssql.Error
 
-	var req registerTipoHabitacionRequest
+	if errors.As(err, &sqlServerError) {
+		status := http.StatusBadRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+		switch sqlServerError.Number {
+		case 50003, 50013, 50016:
+			status = http.StatusNotFound
+		}
 
-	_, err := h.q.GetTipoHabitacionByNombre(
-		c,
-		req.NombreTipoHab,
-	)
-
-	if err == nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Ya existe un tipo de habitación con ese nombre",
+		c.JSON(status, gin.H{
+			"error":  sqlServerError.Message,
+			"codigo": sqlServerError.Number,
 		})
 		return
 	}
 
-	args := dto.CreateTipoHabitacionParams{
-		Nombretipohab:   req.NombreTipoHab,
-		Descripcion:     req.Descripcion,
-		Capacidadmaxima: req.CapacidadMax,
-	}
-
-	result, err := h.q.CreateTipoHabitacion(c, args)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	id, _ := result.LastInsertId()
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Tipo de habitación registrado exitosamente",
-		"id":      id,
+	c.JSON(http.StatusInternalServerError, gin.H{
+		"error": "Ocurrió un error interno al acceder a la base de datos",
 	})
 }
 
-// GET ALL
-// GetTipoHabitacion godoc
-// @Summary Obtener todos los tipos de habitación
-// @Description Devuelve la lista completa de tipos de habitación
-// @Tags tipos-habitacion
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} map[string]interface{}
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /tipos-habitacion [get]
-func (h *TipoHabitacionHandler) GetTipoHabitacion(c *gin.Context) {
-	tipoHabitacion, err := h.q.GetTipoHabitaciones(c)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"tipoHabitacion": tipoHabitacion})
-}
+// RegisterTipoHabitacion crea un tipo de habitación.
+func (h *TipoHabitacionHandler) RegisterTipoHabitacion(c *gin.Context) {
+	var req registerTipoHabitacionRequest
 
-// GET BY ID
-// GetTipoHabitacionByID godoc
-// @Summary Obtener tipo de habitación por ID
-// @Description Busca un tipo de habitación por su ID
-// @Tags tipos-habitacion
-// @Produce json
-// @Security BearerAuth
-// @Param id path int true "ID del tipo de habitación"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /tipos-habitacion/{id} [get]
-func (h *TipoHabitacionHandler) GetTipoHabitacionByID(c *gin.Context) {
-	id, ok := getIDHab(c)
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
-		return
-	}
-	tipoHabitacion, err := h.q.GetTipoHabitacionById(c, id)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Tipo de habitación no encontrado"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"tipoHabitacion": tipoHabitacion})
-}
-
-// UPDATE
-// UpdateTipoHabitacion godoc
-// @Summary Actualizar tipo de habitación
-// @Description Actualiza los datos de un tipo de habitación existente
-// @Tags tipos-habitacion
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param id path int true "ID del tipo de habitación"
-// @Param tipoHabitacion body updateTipoHabitacionRequest true "Datos a actualizar"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /tipos-habitacion/{id} [put]
-func (h *TipoHabitacionHandler) UpdateTipoHabitacion(c *gin.Context) {
-	id, ok := getIDHab(c)
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
-		return
-	}
-	var req updateTipoHabitacionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	args := dto.UpdateTipoHabitacionParams{
-		Nombretipohab:    req.NombreTipoHab,
-		Descripcion:      req.Descripcion,
-		Capacidadmaxima:  req.CapacidadMax,
-		Estado:           req.Estado,
-		Idtipohabitacion: id,
-	}
-	result, err := h.q.UpdateTipoHabitacion(c, args)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Tipo de habitación no encontrado",
-			"id":      id,
-			"details": "verifique si el ID existe o si fue eliminada",
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Los datos enviados no son válidos",
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Tipo de habitación actualizado exitosamente"})
+
+	resultado, err := h.repository.Crear(
+		c.Request.Context(),
+		req.NombreTipoHab,
+		req.Descripcion,
+		req.CapacidadMax,
+	)
+	if err != nil {
+		responderErrorSQLServer(c, err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": resultado.Mensaje,
+		"id":      resultado.IDTipoHabitacion,
+	})
 }
 
-// DELETE LOGICO
-// DeleteTipoHabitacion godoc
-// @Summary Eliminar tipo de habitación (soft delete)
-// @Description Cambia el estado del tipo de habitación en vez de borrarlo físicamente
-// @Tags tipos-habitacion
-// @Produce json
-// @Security BearerAuth
-// @Param id path int true "ID del tipo de habitación"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /tipos-habitacion/{id} [delete]
-func (h *TipoHabitacionHandler) DeleteTipoHabitacion(c *gin.Context) {
+// GetTipoHabitacion obtiene los tipos de habitación.
+// Puede recibir ?estado=1 o ?estado=0.
+// Si no recibe estado, devuelve todos.
+func (h *TipoHabitacionHandler) GetTipoHabitacion(c *gin.Context) {
+	var filtroEstado *int8
+
+	estadoParam := c.Query("estado")
+
+	if estadoParam != "" {
+		estado, err := strconv.Atoi(estadoParam)
+
+		if err != nil || (estado != 0 && estado != 1) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "El filtro estado debe ser 0 o 1",
+			})
+			return
+		}
+
+		estadoConvertido := int8(estado)
+		filtroEstado = &estadoConvertido
+	}
+
+	tiposHabitacion, err := h.repository.Listar(
+		c.Request.Context(),
+		filtroEstado,
+	)
+	if err != nil {
+		responderErrorSQLServer(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"tipoHabitacion": tiposHabitacion,
+	})
+}
+
+// GetTipoHabitacionByID obtiene un tipo de habitación por ID.
+func (h *TipoHabitacionHandler) GetTipoHabitacionByID(
+	c *gin.Context,
+) {
 	id, ok := getIDHab(c)
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
 		return
 	}
-	result, err := h.q.DeleteTipoHabitacion(c, id)
+
+	tipoHabitacion, err := h.repository.ObtenerPorID(
+		c.Request.Context(),
+		id,
+	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		responderErrorSQLServer(c, err)
 		return
 	}
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Tipo de habitación no encontrado",
-			"id":      id,
-			"details": "verifique si el ID existe",
+
+	c.JSON(http.StatusOK, gin.H{
+		"tipoHabitacion": tipoHabitacion,
+	})
+}
+
+// UpdateTipoHabitacion actualiza un tipo de habitación.
+func (h *TipoHabitacionHandler) UpdateTipoHabitacion(
+	c *gin.Context,
+) {
+	id, ok := getIDHab(c)
+	if !ok {
+		return
+	}
+
+	var req updateTipoHabitacionRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Los datos enviados no son válidos",
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Tipo de habitación eliminado exitosamente"})
+
+	if req.Estado != 0 && req.Estado != 1 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "El estado debe ser 0 o 1",
+		})
+		return
+	}
+
+	resultado, err := h.repository.Actualizar(
+		c.Request.Context(),
+		id,
+		req.NombreTipoHab,
+		req.Descripcion,
+		req.CapacidadMax,
+		req.Estado,
+	)
+	if err != nil {
+		responderErrorSQLServer(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":        resultado.Mensaje,
+		"id":             resultado.IDTipoHabitacion,
+		"filasAfectadas": resultado.FilasAfectadas,
+	})
+}
+
+// DeleteTipoHabitacion realiza la eliminación lógica.
+func (h *TipoHabitacionHandler) DeleteTipoHabitacion(
+	c *gin.Context,
+) {
+	id, ok := getIDHab(c)
+	if !ok {
+		return
+	}
+
+	resultado, err := h.repository.Eliminar(
+		c.Request.Context(),
+		id,
+	)
+	if err != nil {
+		responderErrorSQLServer(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":        resultado.Mensaje,
+		"id":             resultado.IDTipoHabitacion,
+		"filasAfectadas": resultado.FilasAfectadas,
+	})
 }

@@ -3,41 +3,48 @@ package utils
 import (
 	"context"
 	"database/sql"
-	"reserva-backend/dto"
+	"errors"
+
+	"reserva-backend/repository"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-func SeedAdmin(db *dto.Queries, config Config) error {
+func SeedAdmin(
+	db *repository.UsuarioRepository,
+	config Config,
+) error {
+	ctx := context.Background()
 
-	_, err := db.GetUserByEmail(
-		context.Background(),
+	_, err := db.ObtenerPorEmail(
+		ctx,
 		config.AdminEmail,
 	)
 
-	// si ya existe, no hace nada
+	// Si ya existe y está activo, no hace nada.
 	if err == nil {
 		return nil
+	}
+
+	// Si el error no significa "usuario inexistente",
+	// se devuelve el error real.
+	if !errors.Is(err, sql.ErrNoRows) {
+		return err
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword(
 		[]byte(config.AdminPassword),
 		bcrypt.DefaultCost,
 	)
-
 	if err != nil {
 		return err
 	}
 
-	err = db.CreateUser(context.Background(), dto.CreateUserParams{
-		Name: config.AdminName,
-		Role: sql.NullString{
-			String: config.AdminRole,
-			Valid:  true,
-		},
-		Email:    config.AdminEmail,
-		Password: string(hashedPassword),
-	})
-
-	return err
+	return db.CrearAdmin(
+		ctx,
+		config.AdminName,
+		config.AdminEmail,
+		string(hashedPassword),
+		config.AdminRole,
+	)
 }

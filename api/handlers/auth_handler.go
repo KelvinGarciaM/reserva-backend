@@ -1,12 +1,11 @@
 package handlers
 
 import (
-	"context"
 	"database/sql"
 	"net/http"
 	"time"
 
-	"reserva-backend/dto"
+	"reserva-backend/repository"
 	"reserva-backend/security"
 
 	"github.com/gin-gonic/gin"
@@ -17,14 +16,17 @@ import (
 ========================= */
 
 type AuthHandler struct {
-	q     *dto.Queries
-	token security.Builder
+	usuarios *repository.UsuarioRepository
+	token    security.Builder
 }
 
-func NewAuthHandler(q *dto.Queries, token security.Builder) *AuthHandler {
+func NewAuthHandler(
+	usuarios *repository.UsuarioRepository,
+	token security.Builder,
+) *AuthHandler {
 	return &AuthHandler{
-		q:     q,
-		token: token,
+		usuarios: usuarios,
+		token:    token,
 	}
 }
 
@@ -54,9 +56,10 @@ type loginResponse struct {
 /* =========================
    LOGIN
 ========================= */
+
 // Login godoc
 // @Summary Iniciar sesión
-// @Description Autentica un usuario y retorna un token JWT
+// @Description Autentica un usuario y retorna un token PASETO
 // @Tags auth
 // @Accept json
 // @Produce json
@@ -67,33 +70,47 @@ type loginResponse struct {
 // @Failure 500 {object} map[string]string
 // @Router /login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
-
 	var req loginRequest
 
-	// Validar request
+	// Validar el JSON recibido.
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Datos de inicio de sesión inválidos",
+		})
 		return
 	}
 
-	// Buscar usuario
-	user, err := h.q.GetUserByEmail(context.Background(), req.Email)
+	// Buscar usuario activo en SQL Server.
+	user, err := h.usuarios.ObtenerPorEmail(
+		c.Request.Context(),
+		req.Email,
+	)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no existe"})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Usuario no existe o se encuentra inactivo",
+		})
 		return
 	}
 
-	// Verificar contraseña
-	err = security.CheckPassword(req.Password, user.Password)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "password incorrecto"})
+	// Comparar la contraseña recibida con el hash bcrypt.
+	if err := security.CheckPassword(
+		req.Password,
+		user.Password,
+	); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Contraseña incorrecta",
+		})
 		return
 	}
+
+	// Convertir la imagen nullable a string.
 	image := ""
+
 	if user.Image.Valid {
 		image = user.Image.String
 	}
-	// Crear token ( usando Builder)
+
+	// Crear token PASETO.
 	token, err := h.token.CreateToken(
 		user.ID,
 		user.Email,
@@ -103,11 +120,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		time.Hour*24,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error generando token"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Error generando el token de acceso",
+		})
 		return
 	}
 
-	// Respuesta
+	// Responder al frontend.
 	c.JSON(http.StatusOK, loginResponse{
 		AccessToken: token,
 		User: loginUser{

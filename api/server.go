@@ -3,6 +3,7 @@ package api
 import (
 	"reserva-backend/api/handlers"
 	"reserva-backend/dto"
+	"reserva-backend/repository"
 	"reserva-backend/security"
 	"time"
 
@@ -16,7 +17,12 @@ type Server struct {
 	tokenBuilder security.Builder
 }
 
-func NewServer(dbtx *dto.Queries, secret string) (*Server, error) {
+func NewServer(
+	dbtx *dto.Queries,
+	tipoHabitacionRepository *repository.TipoHabitacionRepository,
+	usuarioRepository *repository.UsuarioRepository,
+	secret string,
+) (*Server, error) {
 
 	//Crear builder
 	builder, err := security.NewPasetoBuilder(secret)
@@ -31,14 +37,19 @@ func NewServer(dbtx *dto.Queries, secret string) (*Server, error) {
 
 	// HANDLERS
 	userHandler := handlers.NewUserHandler(dbtx)
-	authHandler := handlers.NewAuthHandler(dbtx, builder)
+	authHandler := handlers.NewAuthHandler(
+		usuarioRepository,
+		builder,
+	)
 	reservaHandler := handlers.NewReservaHandler(dbtx)
 	detalleReservaHandler := handlers.NewDetalleReservaHandler(dbtx)
 	tarifaHandler := handlers.NewTarifaHandler(dbtx)
 	clienteHandler := handlers.NewClienteHandler(dbtx)
 	tipoClienteHandler := handlers.NewTipoClienteHandler(dbtx)
 	recepcionistaHandler := handlers.NewRecepcionistaHandler(dbtx)
-	tipoHabitacionHandler := handlers.NewTipoHabitacionHandler(dbtx)
+	// tipoHabitacionHandler := handlers.NewTipoHabitacionHandler(dbtx)
+	tipoHabitacionHandler :=
+		handlers.NewTipoHabitacionHandler(tipoHabitacionRepository)
 	habitacionHandler := handlers.NewHabitacionHandler(dbtx)
 
 	// ROUTER
