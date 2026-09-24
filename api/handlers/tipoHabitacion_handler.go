@@ -24,14 +24,14 @@ func NewTipoHabitacionHandler(
 }
 
 type registerTipoHabitacionRequest struct {
-	NombreTipoHab string `json:"nombreTipoHab" binding:"required"`
-	Descripcion   string `json:"descripcion" binding:"required"`
+	NombreTipoHab string `json:"nombreTipoHab"`
+	Descripcion   string `json:"descripcion"`
 	CapacidadMax  int32  `json:"capacidadMax" binding:"required"`
 }
 
 type updateTipoHabitacionRequest struct {
-	NombreTipoHab string `json:"nombreTipoHab" binding:"required"`
-	Descripcion   string `json:"descripcion" binding:"required"`
+	NombreTipoHab string `json:"nombreTipoHab"`
+	Descripcion   string `json:"descripcion"`
 	CapacidadMax  int32  `json:"capacidadMax" binding:"required"`
 	Estado        int8   `json:"estado"`
 }
