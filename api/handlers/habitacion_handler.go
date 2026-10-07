@@ -2,18 +2,23 @@ package handlers
 
 import (
 	"net/http"
-	"reserva-backend/dto"
 	"strconv"
+
+	"reserva-backend/repository"
 
 	"github.com/gin-gonic/gin"
 )
 
 type HabitacionHandler struct {
-	q *dto.Queries
+	repository *repository.HabitacionRepository
 }
 
-func NewHabitacionHandler(q *dto.Queries) *HabitacionHandler {
-	return &HabitacionHandler{q: q}
+func NewHabitacionHandler(
+	repository *repository.HabitacionRepository,
+) *HabitacionHandler {
+	return &HabitacionHandler{
+		repository: repository,
+	}
 }
 
 //REQUESTS
@@ -59,35 +64,26 @@ func (h *HabitacionHandler) RegisterHabitacion(c *gin.Context) {
 	var req registerHabitacionRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	_, err := h.q.GetHabitacionByNumero(c, req.NumeroHabitacion)
-
-	if err == nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Ya existe una habitación con ese número",
+			"error": err.Error(),
 		})
 		return
 	}
 
-	args := dto.CreateHabitacionParams{
-		Idtipohab:        req.IdTipoHab,
-		Numerohabitacion: req.NumeroHabitacion,
-	}
+	resultado, err := h.repository.Crear(
+		c.Request.Context(),
+		req.IdTipoHab,
+		req.NumeroHabitacion,
+	)
 
-	result, err := h.q.CreateHabitacion(c, args)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	id, _ := result.LastInsertId()
-
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Habitación creada exitosamente",
-		"id":      id,
+		"id":      resultado.IDHabitacion,
 	})
 }
 
@@ -103,12 +99,33 @@ func (h *HabitacionHandler) RegisterHabitacion(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /habitaciones [get]
 func (h *HabitacionHandler) GetHabitaciones(c *gin.Context) {
-	habitaciones, err := h.q.GetHabitaciones(c)
+
+	habitaciones, err := h.repository.Listar(
+		c.Request.Context(),
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"habitaciones": habitaciones})
+
+	response := make([]gin.H, 0)
+
+	for _, hab := range habitaciones {
+		response = append(response, gin.H{
+			"idhabitacion":     hab.IDHabitacion,
+			"idtipohab":        hab.IDTipoHab,
+			"nombretipohab":    hab.NombreTipoHab,
+			"numerohabitacion": hab.NumeroHabitacion,
+			"estado":           hab.Estado,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"habitaciones": response,
+	})
 }
 
 // Get By ID
@@ -126,17 +143,32 @@ func (h *HabitacionHandler) GetHabitaciones(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /habitaciones/{id} [get]
 func (h *HabitacionHandler) GetHabitacionByID(c *gin.Context) {
+
 	id, ok := getIDHabitacion(c)
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
 		return
 	}
-	habitacion, err := h.q.GetHabitacionById(c, id)
+
+	habitacion, err := h.repository.ObtenerPorID(
+		c.Request.Context(),
+		id,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"message": "Habitacion no encontrada"})
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "Habitacion no encontrada",
+		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"habitacion": habitacion})
+
+	c.JSON(http.StatusOK, gin.H{
+		"habitacion": gin.H{
+			"idhabitacion":     habitacion.IDHabitacion,
+			"idtipohab":        habitacion.IDTipoHab,
+			"numerohabitacion": habitacion.NumeroHabitacion,
+			"estado":           habitacion.Estado,
+		},
+	})
 }
 
 // Get By Tipo Hab
@@ -154,17 +186,38 @@ func (h *HabitacionHandler) GetHabitacionByID(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /habitaciones/tipo/{id} [get]
 func (h *HabitacionHandler) GetHabitacionesByTipoHab(c *gin.Context) {
-	idP, ok := getIDHabitacion(c)
+
+	id, ok := getIDHabitacion(c)
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
 		return
 	}
-	habitaciones, err := h.q.GetHabitacionesByTipo(c, idP)
+
+	habitaciones, err := h.repository.ListarPorTipo(
+		c.Request.Context(),
+		id,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"message": "Habitaciones no encontradas"})
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "Habitaciones no encontradas",
+		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"habitaciones": habitaciones})
+
+	response := make([]gin.H, 0)
+
+	for _, hab := range habitaciones {
+		response = append(response, gin.H{
+			"idhabitacion":     hab.IDHabitacion,
+			"idtipohab":        hab.IDTipoHab,
+			"numerohabitacion": hab.NumeroHabitacion,
+			"estado":           hab.Estado,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"habitaciones": response,
+	})
 }
 
 // Update
@@ -184,37 +237,44 @@ func (h *HabitacionHandler) GetHabitacionesByTipoHab(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /habitaciones/{id} [put]
 func (h *HabitacionHandler) UpdateHabitacion(c *gin.Context) {
+
 	id, ok := getIDHabitacion(c)
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
 		return
 	}
+
 	var req updateHabitacionRequest
+
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	args := dto.UpdateHabitacionParams{
-		Idtipohab:        req.IdTipoHab,
-		Numerohabitacion: req.NumeroHabitacion,
-		Estado:           req.Estado,
-		Idhabitacion:     id,
-	}
-	result, err := h.q.UpdateHabitacion(c, args)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error":   "Habitación no encontrada",
-			"id":      id,
-			"details": "verifique si el ID existe o si fue eliminada",
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Habitación actualizada exitosamente"})
+
+	if req.Estado != 0 && req.Estado != 1 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "el estado debe ser 0 o 1",
+		})
+		return
+	}
+
+	_, err := h.repository.Actualizar(
+		c.Request.Context(),
+		id,
+		req.IdTipoHab,
+		req.NumeroHabitacion,
+		req.Estado,
+	)
+
+	if err != nil {
+		responderErrorSQLServer(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Habitación actualizada exitosamente",
+	})
 }
 
 // DELETE LOGICO
@@ -232,33 +292,65 @@ func (h *HabitacionHandler) UpdateHabitacion(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /habitaciones/{id} [delete]
 func (h *HabitacionHandler) DeleteHabitacion(c *gin.Context) {
+
 	id, ok := getIDHabitacion(c)
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
 		return
 	}
-	result, err := h.q.DeleteHabitacion(c, id)
+
+	_, err := h.repository.Eliminar(
+		c.Request.Context(),
+		id,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		responderErrorSQLServer(c, err)
 		return
 	}
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error":   "Habitación no encontrada",
-			"id":      id,
-			"details": "verifique si el ID existe o si fue eliminada",
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Habitación eliminada exitosamente",
+	})
+}
+
+// GetHabitacionesDisponibles godoc
+// @Summary Obtener habitaciones disponibles
+// @Description Obtiene habitaciones activas con tipo y tarifa activos y con tarifa vigente actualmente
+// @Tags habitaciones
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /habitaciones/disponibles [get]
+func (h *HabitacionHandler) GetHabitacionesDisponibles(c *gin.Context) {
+
+	habitaciones, err := h.repository.ListarDisponibles(
+		c.Request.Context(),
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Habitación eliminada exitosamente"})
-}
 
-func (h *HabitacionHandler) GetHabitacionesDisponibles(c *gin.Context) {
-	habitaciones, err := h.q.GetHabitacionesDisponibles(c)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+	response := make([]gin.H, 0)
+
+	for _, hab := range habitaciones {
+		response = append(response, gin.H{
+			"idhabitacion":     hab.IDHabitacion,
+			"numerohabitacion": hab.NumeroHabitacion,
+			"nombretipohab":    hab.NombreTipoHab,
+			"idtarifa":         hab.IDTarifa,
+			"nombretarifa":     hab.NombreTarifa,
+			"preciobase":       hab.PrecioBase,
+			"capacidadmaxima":  hab.CapacidadMaxima,
+		})
 	}
-	c.JSON(http.StatusOK, gin.H{"habitaciones": habitaciones})
+
+	c.JSON(http.StatusOK, gin.H{
+		"habitaciones": response,
+	})
 }

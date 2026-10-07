@@ -57,7 +57,12 @@ func responderErrorSQLServer(c *gin.Context, err error) {
 		status := http.StatusBadRequest
 
 		switch sqlServerError.Number {
-		case 50003, 50013, 50016:
+		case 50003, 50013, 50016,
+			50103, 50111, 50114, 50116,
+			50203, 50211, 50212, 50214,
+			50309, 50312, 50410, 50415,
+			50507, 50510, 50608, 50611,
+			50703, 50706:
 			status = http.StatusNotFound
 		}
 
@@ -73,7 +78,18 @@ func responderErrorSQLServer(c *gin.Context, err error) {
 	})
 }
 
-// RegisterTipoHabitacion crea un tipo de habitación.
+// RegisterTipoHabitacion godoc
+// @Summary Crear tipo de habitación
+// @Description Registra un nuevo tipo de habitación
+// @Tags tipos-habitacion
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param datos body registerTipoHabitacionRequest true "Datos del tipo de habitación"
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Router /tipos-habitacion [post]
 func (h *TipoHabitacionHandler) RegisterTipoHabitacion(c *gin.Context) {
 	var req registerTipoHabitacionRequest
 
@@ -101,9 +117,17 @@ func (h *TipoHabitacionHandler) RegisterTipoHabitacion(c *gin.Context) {
 	})
 }
 
-// GetTipoHabitacion obtiene los tipos de habitación.
-// Puede recibir ?estado=1 o ?estado=0.
-// Si no recibe estado, devuelve todos.
+// GetTipoHabitacion godoc
+// @Summary Obtener tipos de habitación
+// @Description Obtiene todos los tipos de habitación y permite filtrar por estado
+// @Tags tipos-habitacion
+// @Produce json
+// @Security BearerAuth
+// @Param estado query int false "Estado: 0 inactivo, 1 activo"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Router /tipos-habitacion [get]
 func (h *TipoHabitacionHandler) GetTipoHabitacion(c *gin.Context) {
 	var filtroEstado *int8
 
@@ -137,7 +161,18 @@ func (h *TipoHabitacionHandler) GetTipoHabitacion(c *gin.Context) {
 	})
 }
 
-// GetTipoHabitacionByID obtiene un tipo de habitación por ID.
+// GetTipoHabitacionByID godoc
+// @Summary Obtener tipo de habitación por ID
+// @Description Obtiene la información de un tipo de habitación específico
+// @Tags tipos-habitacion
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID del tipo de habitación"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /tipos-habitacion/{id} [get]
 func (h *TipoHabitacionHandler) GetTipoHabitacionByID(
 	c *gin.Context,
 ) {
@@ -160,7 +195,20 @@ func (h *TipoHabitacionHandler) GetTipoHabitacionByID(
 	})
 }
 
-// UpdateTipoHabitacion actualiza un tipo de habitación.
+// UpdateTipoHabitacion godoc
+// @Summary Actualizar tipo de habitación
+// @Description Actualiza los datos de un tipo de habitación existente
+// @Tags tipos-habitacion
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID del tipo de habitación"
+// @Param datos body updateTipoHabitacionRequest true "Datos actualizados del tipo de habitación"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /tipos-habitacion/{id} [put]
 func (h *TipoHabitacionHandler) UpdateTipoHabitacion(
 	c *gin.Context,
 ) {
@@ -205,7 +253,18 @@ func (h *TipoHabitacionHandler) UpdateTipoHabitacion(
 	})
 }
 
-// DeleteTipoHabitacion realiza la eliminación lógica.
+// DeleteTipoHabitacion godoc
+// @Summary Desactivar tipo de habitación
+// @Description Realiza la eliminación lógica de un tipo de habitación cambiando su estado
+// @Tags tipos-habitacion
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID del tipo de habitación"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /tipos-habitacion/{id} [delete]
 func (h *TipoHabitacionHandler) DeleteTipoHabitacion(
 	c *gin.Context,
 ) {

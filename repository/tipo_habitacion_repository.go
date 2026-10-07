@@ -53,7 +53,7 @@ func (r *TipoHabitacionRepository) Listar(
 	}
 
 	const procedimiento = `
-		EXEC dbo.sp_TipoHabitacion_Listar
+		EXEC dbo.pa_TipoHabitacion_Listar
 			@soloActivos = @SoloActivos
 	`
 
@@ -99,7 +99,7 @@ func (r *TipoHabitacionRepository) ObtenerPorID(
 ) (models.TipoHabitacion, error) {
 
 	const procedimiento = `
-		EXEC dbo.sp_TipoHabitacion_ObtenerPorId
+		EXEC dbo.pa_TipoHabitacion_ObtenerPorId
 			@idTipoHabitacion = @IDTipoHabitacion
 	`
 
@@ -129,7 +129,7 @@ func (r *TipoHabitacionRepository) Crear(
 ) (CrearTipoHabitacionResultado, error) {
 
 	const procedimiento = `
-		EXEC dbo.sp_TipoHabitacion_Crear
+		EXEC dbo.pa_TipoHabitacion_Crear
 			@nombreTipoHab = @NombreTipoHab,
 			@descripcion = @Descripcion,
 			@capacidadMaxima = @CapacidadMaxima
@@ -162,7 +162,7 @@ func (r *TipoHabitacionRepository) Actualizar(
 ) (ActualizarTipoHabitacionResultado, error) {
 
 	const procedimiento = `
-		EXEC dbo.sp_TipoHabitacion_Actualizar
+		EXEC dbo.pa_TipoHabitacion_Actualizar
 			@idTipoHabitacion = @IDTipoHabitacion,
 			@nombreTipoHab = @NombreTipoHab,
 			@descripcion = @Descripcion,
@@ -196,7 +196,7 @@ func (r *TipoHabitacionRepository) Eliminar(
 ) (EliminarTipoHabitacionResultado, error) {
 
 	const procedimiento = `
-		EXEC dbo.sp_TipoHabitacion_Eliminar
+		EXEC dbo.pa_TipoHabitacion_Eliminar
 			@idTipoHabitacion = @IDTipoHabitacion
 	`
 

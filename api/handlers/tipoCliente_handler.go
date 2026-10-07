@@ -1,23 +1,25 @@
 package handlers
 
 import (
-	"database/sql"
-	"errors"
 	"net/http"
 	"strconv"
 
-	"reserva-backend/dto"
+	"reserva-backend/repository"
 
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
 )
 
 type TipoClienteHandler struct {
-	q *dto.Queries
+	repository *repository.TipoClienteRepository
 }
 
-func NewTipoClienteHandler(q *dto.Queries) *TipoClienteHandler {
-	return &TipoClienteHandler{q}
+func NewTipoClienteHandler(
+	repository *repository.TipoClienteRepository,
+) *TipoClienteHandler {
+	return &TipoClienteHandler{
+		repository: repository,
+	}
 }
 
 /* =========================
@@ -68,28 +70,27 @@ func (h *TipoClienteHandler) CreateTipoCliente(c *gin.Context) {
 	var req createTipoClienteRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "datos inválidos",
+		})
 		return
 	}
 
-	result, err := h.q.CreateTipoCliente(c.Request.Context(), dto.CreateTipoClienteParams{
-		Nombretipoc:   req.NombreTipoC,
-		Descripcion:   req.Descripcion,
-		Descuentobase: req.DescuentoBase,
-	})
+	resultado, err := h.repository.Crear(
+		c.Request.Context(),
+		req.NombreTipoC,
+		req.Descripcion,
+		req.DescuentoBase.InexactFloat64(),
+	)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error creando tipoCliente"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se creó el tipoCliente"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Tipo Cliente creado!"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": resultado.Mensaje,
+	})
 }
 
 // GET ALL
@@ -104,26 +105,30 @@ func (h *TipoClienteHandler) CreateTipoCliente(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /tipos-cliente [get]
 func (h *TipoClienteHandler) GetTipoClientes(c *gin.Context) {
-	tipos, err := h.q.GetTipoClientes(c.Request.Context())
+
+	tipos, err := h.repository.Listar(
+		c.Request.Context(),
+		nil,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error obteniendo tipos"})
+		responderErrorSQLServer(c, err)
 		return
 	}
+
 	response := make([]gin.H, 0)
 
 	for _, t := range tipos {
 		response = append(response, gin.H{
-			"idTipoCliente": t.Idtipocliente,
-			"nombreTipoC":   t.Nombretipoc,
+			"idTipoCliente": t.IDTipoCliente,
+			"nombreTipoC":   t.NombreTipoC,
 			"descripcion":   t.Descripcion,
-			"descuentoBase": t.Descuentobase,
+			"descuentoBase": t.DescuentoBase,
 			"estado":        t.Estado,
 		})
 	}
 
 	c.JSON(http.StatusOK, response)
-
-	//c.JSON(http.StatusOK, tipos)
 }
 
 // GET BY ID
@@ -141,33 +146,35 @@ func (h *TipoClienteHandler) GetTipoClientes(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /tipos-cliente/{id} [get]
 func (h *TipoClienteHandler) GetTipoClienteById(c *gin.Context) {
+
 	idParam := c.Param("id")
 
 	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
+
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "id inválido",
+		})
 		return
 	}
 
-	tipo, err := h.q.GetTipoClienteById(c.Request.Context(), int32(id))
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "tipoCliente no encontrado"})
-			return
-		}
+	tipo, err := h.repository.ObtenerPorID(
+		c.Request.Context(),
+		int32(id),
+	)
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error buscando tipoCliente"})
+	if err != nil {
+		responderErrorSQLServer(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"idTipoCliente": tipo.Idtipocliente,
-		"nombreTipoC":   tipo.Nombretipoc,
+		"idTipoCliente": tipo.IDTipoCliente,
+		"nombreTipoC":   tipo.NombreTipoC,
 		"descripcion":   tipo.Descripcion,
-		"descuentoBase": tipo.Descuentobase,
+		"descuentoBase": tipo.DescuentoBase,
 		"estado":        tipo.Estado,
 	})
-
-	//c.JSON(http.StatusOK, tipo)
 }
 
 // SearchTipoClientes godoc
@@ -183,28 +190,39 @@ func (h *TipoClienteHandler) GetTipoClienteById(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /tipos-cliente/buscar [get]
 func (h *TipoClienteHandler) SearchTipoClientes(c *gin.Context) {
+
 	query := c.Query("q")
 
 	if query == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "parámetro q requerido"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "parámetro q requerido",
+		})
 		return
 	}
 
-	tipos, err := h.q.SearchTipoClientes(
+	tipos, err := h.repository.Buscar(
 		c.Request.Context(),
-		dto.SearchTipoClientesParams{
-			CONCAT:   query,
-			CONCAT_2: query,
-			CONCAT_3: query,
-		},
+		query,
 	)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error buscando tipoCliente"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, tipos)
+	response := make([]gin.H, 0)
+
+	for _, t := range tipos {
+		response = append(response, gin.H{
+			"idtipocliente": t.IDTipoCliente,
+			"nombretipoc":   t.NombreTipoC,
+			"descripcion":   t.Descripcion,
+			"descuentobase": t.DescuentoBase,
+			"estado":        t.Estado,
+		})
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // UPDATE
@@ -223,33 +241,40 @@ func (h *TipoClienteHandler) SearchTipoClientes(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /tipos-cliente [put]
 func (h *TipoClienteHandler) UpdateTipoCliente(c *gin.Context) {
+
 	var req updateTipoClienteRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "datos inválidos",
+		})
 		return
 	}
 
-	result, err := h.q.UpdateTipoCliente(c.Request.Context(), dto.UpdateTipoClienteParams{
-		Nombretipoc:   req.NombreTipoC,
-		Descripcion:   req.Descripcion,
-		Descuentobase: req.DescuentoBase,
-		Estado:        req.Estado,
-		Idtipocliente: req.IdTipoCliente,
-	})
+	if req.Estado != 0 && req.Estado != 1 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "el estado debe ser 0 o 1",
+		})
+		return
+	}
+
+	resultado, err := h.repository.Actualizar(
+		c.Request.Context(),
+		req.IdTipoCliente,
+		req.NombreTipoC,
+		req.Descripcion,
+		req.DescuentoBase.InexactFloat64(),
+		req.Estado,
+	)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error actualizando tipoCliente"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "tipoCliente no existe"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Tipo Cliente actualizado!"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": resultado.Mensaje,
+	})
 }
 
 /* =========================
@@ -272,26 +297,29 @@ func (h *TipoClienteHandler) UpdateTipoCliente(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /tipos-cliente [delete]
 func (h *TipoClienteHandler) DeleteTipoCliente(c *gin.Context) {
+
 	var req deleteTipoClienteRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "datos inválidos",
+		})
 		return
 	}
 
-	result, err := h.q.DeleteTipoCliente(c.Request.Context(), req.IdTipoCliente)
+	resultado, err := h.repository.Eliminar(
+		c.Request.Context(),
+		req.IdTipoCliente,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error eliminando tipoCliente"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "tipoCliente no existe"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Tipo Cliente eliminado!"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": resultado.Mensaje,
+	})
 }
 
 // ToggleTipoClienteEstado godoc
@@ -308,26 +336,28 @@ func (h *TipoClienteHandler) DeleteTipoCliente(c *gin.Context) {
 // @Failure 404 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /tipos-cliente/toggle [put]
-
 func (h *TipoClienteHandler) ToggleTipoClienteEstado(c *gin.Context) {
+
 	var req tipoClienteIdRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "datos inválidos",
+		})
 		return
 	}
 
-	result, err := h.q.ToggleTipoClienteEstado(c.Request.Context(), req.IdTipoCliente)
+	_, err := h.repository.ToggleEstado(
+		c.Request.Context(),
+		req.IdTipoCliente,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error cambiando estado"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "El tipo de cliente no existe"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Estado actualizado"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Estado actualizado",
+	})
 }

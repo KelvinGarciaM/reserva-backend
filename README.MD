@@ -1,94 +1,110 @@
-# 🚀 Reserva Backend API
+# Reserva Backend
 
-API REST desarrollada en Go utilizando Gin, SQLC y MySQL. Incluye autenticación con PASETO, middleware y CRUD de usuarios.
+API REST desarrollada en **Go con Gin** para el sistema de reservas de hotel.  
+El backend utiliza **SQL Server** como motor de base de datos y se conecta mediante `database/sql` y `go-mssqldb`.
 
-# 🧠 Tecnologías
+La API incluye autenticación con **PASETO**, control de acceso por roles y documentación mediante **Swagger**.
 
+## Tecnologías
 - Go
 - Gin Framework
-- MySQL
-- SQLC
+- SQL Server
+- SQL Server Management Studio (SSMS)
+- `database/sql`
+- `go-mssqldb`
 - PASETO
 - bcrypt
+- Swagger / Swaggo
 
-# 📌 Funcionalidades
+## Requisitos
 
-## Usuarios
-- Registro de usuario
-- Login con token
-- Listar usuarios
-- Buscar usuario por email
-- Actualizar usuario
-- Eliminar usuario
+Antes de ejecutar el proyecto se debe tener instalado:
+- Go
+- SQL Server
+- SQL Server Management Studio
+- Git
+- Swag CLI
 
-## Seguridad
-- Autenticación con PASETO
-- Middleware de rutas protegidas
-- Hash de contraseñas con bcrypt
+Para instalar Swag:
+go install github.com/swaggo/swag/cmd/swag@v1.16.6
 
-# ⚙️ Instalación
 
-## 1. Clonar repositorio
-git clone https://github.com/TU_USUARIO/reserva-backend.git
+## 1. Clonar el proyecto
+git clone <URL_DEL_REPOSITORIO>
 cd reserva-backend
 
 ## 2. Instalar dependencias
 go mod tidy
 
-## 3. Crear base de datos MySQL
-mysql -u root -p
+## 3. Crear la base de datos
 
-CREATE DATABASE reserva_db;
-USE reserva_db;
+Abrir **SQL Server Management Studio** y ejecutar el script de la base de datos del proyecto.
+La base utilizada actualmente es: reservasdbV2
 
-## 4. Crear tabla users
-CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+El script contiene las tablas y objetos necesarios de SQL Server, como:
+- Procedimientos almacenados
+- Vistas
+- Triggers
+- Restricciones
+- Datos necesarios para las pruebas
 
-## 5. Configurar variables de entorno (.env)
-DB_DRIVER=mysql
-DB_SOURCE=root:password@tcp(localhost:3306)/reserva_db
-SERVER_URL=:8080
+## 4. Configurar variables de entorno
 
-## 6. Generar SQLC
-sqlc generate
+La configuración se encuentra en: utils/app.env
+Ejemplo:
+env
+DB_DRIVER=sqlserver
+DB_SOURCE=server=localhost;database=reservasdbV2;user id=TU_USUARIO;password=TU_PASSWORD;encrypt=true;TrustServerCertificate=true
 
-## 7. Ejecutar servidor
-go run main.go
+SERVER_URL=127.0.0.1:8080
+API_VERSION=api/v1
 
-# 🌐 Endpoints
+SECRET=secret
+TOKEN_SYMMETRIC_KEY=12345678901234567890123456789012
 
-## Públicos
+ADMIN_NAME=Administrador
+ADMIN_EMAIL=admin@hotel.com
+ADMIN_PASSWORD=admin123
+ADMIN_ROLE=Administrador
 
-POST /api/v1/users
-POST /api/v1/login
+El usuario y contraseña de SQL Server deben corresponder a una cuenta que tenga acceso a `reservasdbV2`.
 
-## Protegidos (requiere token)
-Authorization: Bearer <token>
+## 5. Ejecutar el backend
+Desde la raíz del proyecto: go run .
+El backend estará disponible en: http://127.0.0.1:8080
 
-GET /api/v1/users
-GET /api/v1/users/:email
-PUT /api/v1/users
-DELETE /api/v1/users
+Y la API utiliza como ruta base: http://127.0.0.1:8080/api/v1
 
-# 🔐 Login Response
+## Estructura principal
+reserva-backend/
+│
+├── api/
+│   ├── handlers/
+│   ├── middleware/
+│   ├── routes.go
+│   └── server.go
+│
+├── db/
+│   ├── procedures/
+│   ├── views/
+│   └── triggers/
+│
+├── models/
+├── repository/
+├── security/
+├── utils/
+├── docs/
+├── main.go
+├── go.mod
+└── README.MD
 
-{
-  "access_token": "token_generado",
-  "payload": {
-    "id": 1,
-    "email": "user@test.com",
-    "role": "admin"
-  }
-}
-
-# 🚀 Flujo del proyecto
-
-SQL → sqlc generate → dto → handlers → server → API funcionando
+## Arquitectura
+Frontend Angular
+      ↓
+API Go + Gin
+      ↓
+Handlers
+      ↓
+Repositories
+      ↓
+SQL Server

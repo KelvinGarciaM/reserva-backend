@@ -2,22 +2,25 @@ package handlers
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
-	"reserva-backend/dto"
 	"strconv"
 
-	"errors"
+	"reserva-backend/repository"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-sql-driver/mysql"
 )
 
 type ClienteHandler struct {
-	q *dto.Queries
+	repository *repository.ClienteRepository
 }
 
-func NewClienteHandler(q *dto.Queries) *ClienteHandler {
-	return &ClienteHandler{q}
+func NewClienteHandler(
+	repository *repository.ClienteRepository,
+) *ClienteHandler {
+	return &ClienteHandler{
+		repository: repository,
+	}
 }
 
 /*
@@ -42,14 +45,10 @@ type updateClienteRequest struct {
 	Apellidos     string `json:"apellidos" binding:"required"`
 	Telefono      string `json:"telefono" binding:"required"`
 	Direccion     string `json:"direccion" binding:"required"`
-	Estado        int8   `json:"estado" binding:"required"`
+	Estado        int8   `json:"estado"`
 }
 
 type clienteCedulaRequest struct {
-	Cedula string `json:"cedula" binding:"required"`
-}
-
-type deleteClienteRequest struct {
 	Cedula string `json:"cedula" binding:"required"`
 }
 
@@ -75,44 +74,32 @@ func (h *ClienteHandler) RegisterCliente(c *gin.Context) {
 	var req registerClienteRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"Error": " Datos invalidos!"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"Error": " Datos invalidos!",
+		})
 		return
 	}
-	result, err := h.q.CreateCliente(c.Request.Context(), dto.CreateClienteParams{
-		Cedula:        req.Cedula,
-		Idtipocliente: req.IdTipoCliente,
-		Nombre:        req.Nombre,
-		Apellidos:     req.Apellidos,
-		Telefono:      req.Telefono,
-		Direccion:     req.Direccion,
-	})
-	/* =========================
-	   CREATE
-	========================= */
+
+	resultado, err := h.repository.Crear(
+		c.Request.Context(),
+		req.Cedula,
+		req.IdTipoCliente,
+		req.Nombre,
+		req.Apellidos,
+		req.Telefono,
+		req.Direccion,
+	)
+
 	if err != nil {
-		var mysqlErr *mysql.MySQLError
-
-		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
-			c.JSON(http.StatusBadRequest, gin.H{"Error": " La cedula ya esta registrada"})
-			return
-		}
-
-		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1452 {
-			c.JSON(http.StatusBadRequest, gin.H{"Error": " El tipo de cliente no existe"})
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{"Error": " Error creando cliente"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusInternalServerError, gin.H{"Error": " No se pudo crear el cliente"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"Message": "Cliente creado!"})
+	c.JSON(http.StatusOK, gin.H{
+		"Message": "Cliente creado!",
+	})
 
+	_ = resultado
 }
 
 /* =========================
@@ -131,9 +118,15 @@ func (h *ClienteHandler) RegisterCliente(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /clientes [get]
 func (h *ClienteHandler) GetClientes(c *gin.Context) {
-	clientes, err := h.q.GetClientes(c.Request.Context())
+
+	clientes, err := h.repository.Listar(
+		c.Request.Context(),
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error obteniendo clientes"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "error obteniendo clientes",
+		})
 		return
 	}
 
@@ -142,8 +135,8 @@ func (h *ClienteHandler) GetClientes(c *gin.Context) {
 	for _, cli := range clientes {
 		response = append(response, gin.H{
 			"cedula":        cli.Cedula,
-			"idTipoCliente": cli.Idtipocliente,
-			"nombreTipoC":   cli.Nombretipoc,
+			"idTipoCliente": cli.IDTipoCliente,
+			"nombreTipoC":   cli.NombreTipoC,
 			"nombre":        cli.Nombre,
 			"apellidos":     cli.Apellidos,
 			"telefono":      cli.Telefono,
@@ -172,7 +165,7 @@ func (h *ClienteHandler) GetClienteByCedula(c *gin.Context) {
 
 	cedula := c.Param("cedula")
 
-	cliente, err := h.q.GetClienteByCedula(
+	cliente, err := h.repository.ObtenerPorCedula(
 		c.Request.Context(),
 		cedula,
 	)
@@ -194,8 +187,8 @@ func (h *ClienteHandler) GetClienteByCedula(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"cedula":        cliente.Cedula,
-		"idTipoCliente": cliente.Idtipocliente,
-		"nombreTipoC":   cliente.Nombretipoc,
+		"idTipoCliente": cliente.IDTipoCliente,
+		"nombreTipoC":   cliente.NombreTipoC,
 		"nombre":        cliente.Nombre,
 		"apellidos":     cliente.Apellidos,
 		"telefono":      cliente.Telefono,
@@ -218,17 +211,27 @@ func (h *ClienteHandler) GetClienteByCedula(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /clientes/tipo/{idtipocliente} [get]
 func (h *ClienteHandler) GetClientesByTipoCliente(c *gin.Context) {
+
 	idParam := c.Param("idtipocliente")
 
 	idTipoCliente, err := strconv.Atoi(idParam)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "idTipoCliente inválido"})
+
+	if err != nil || idTipoCliente <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "idTipoCliente inválido",
+		})
 		return
 	}
 
-	clientes, err := h.q.GetClientesByTipoCliente(c.Request.Context(), int32(idTipoCliente))
+	clientes, err := h.repository.ListarPorTipo(
+		c.Request.Context(),
+		int32(idTipoCliente),
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error obteniendo clientes"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "error obteniendo clientes",
+		})
 		return
 	}
 
@@ -237,8 +240,8 @@ func (h *ClienteHandler) GetClientesByTipoCliente(c *gin.Context) {
 	for _, cli := range clientes {
 		response = append(response, gin.H{
 			"cedula":        cli.Cedula,
-			"idTipoCliente": cli.Idtipocliente,
-			"nombreTipoC":   cli.Nombretipoc,
+			"idTipoCliente": cli.IDTipoCliente,
+			"nombreTipoC":   cli.NombreTipoC,
 			"nombre":        cli.Nombre,
 			"apellidos":     cli.Apellidos,
 			"telefono":      cli.Telefono,
@@ -264,27 +267,25 @@ func (h *ClienteHandler) GetClientesByTipoCliente(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /clientes/buscar [get]
 func (h *ClienteHandler) SearchClientes(c *gin.Context) {
+
 	query := c.Query("q")
 
 	if query == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "parámetro q requerido"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "parámetro q requerido",
+		})
 		return
 	}
 
-	clientes, err := h.q.SearchClientes(
+	clientes, err := h.repository.Buscar(
 		c.Request.Context(),
-		dto.SearchClientesParams{
-			CONCAT:   query,
-			CONCAT_2: query,
-			CONCAT_3: query,
-			CONCAT_4: query,
-			CONCAT_5: query,
-			CONCAT_6: query,
-		},
+		query,
 	)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error buscando clientes"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "error buscando clientes",
+		})
 		return
 	}
 
@@ -293,8 +294,8 @@ func (h *ClienteHandler) SearchClientes(c *gin.Context) {
 	for _, cli := range clientes {
 		response = append(response, gin.H{
 			"cedula":        cli.Cedula,
-			"idTipoCliente": cli.Idtipocliente,
-			"nombreTipoC":   cli.Nombretipoc,
+			"idTipoCliente": cli.IDTipoCliente,
+			"nombreTipoC":   cli.NombreTipoC,
 			"nombre":        cli.Nombre,
 			"apellidos":     cli.Apellidos,
 			"telefono":      cli.Telefono,
@@ -327,39 +328,38 @@ func (h *ClienteHandler) UpdateCliente(c *gin.Context) {
 	var req updateClienteRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "datos inválidos",
+		})
 		return
 	}
 
-	result, err := h.q.UpdateCliente(c.Request.Context(), dto.UpdateClienteParams{
-		Idtipocliente: req.IdTipoCliente,
-		Nombre:        req.Nombre,
-		Apellidos:     req.Apellidos,
-		Telefono:      req.Telefono,
-		Direccion:     req.Direccion,
-		Estado:        req.Estado,
-		Cedula:        req.Cedula,
-	})
+	if req.Estado != 0 && req.Estado != 1 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "el estado debe ser 0 o 1",
+		})
+		return
+	}
+
+	_, err := h.repository.Actualizar(
+		c.Request.Context(),
+		req.Cedula,
+		req.IdTipoCliente,
+		req.Nombre,
+		req.Apellidos,
+		req.Telefono,
+		req.Direccion,
+		req.Estado,
+	)
 
 	if err != nil {
-		var mysqlErr *mysql.MySQLError
-
-		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1452 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "el tipo de cliente no existe"})
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error actualizando cliente"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "cliente no existe"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "cliente actualizado"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "cliente actualizado",
+	})
 }
 
 /* =========================
@@ -385,23 +385,25 @@ func (h *ClienteHandler) DeleteCliente(c *gin.Context) {
 	var req clienteCedulaRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "datos inválidos",
+		})
 		return
 	}
 
-	result, err := h.q.DeleteCliente(c.Request.Context(), req.Cedula)
+	_, err := h.repository.Eliminar(
+		c.Request.Context(),
+		req.Cedula,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error desactivando cliente"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "cliente no existe"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "cliente desactivado"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "cliente desactivado",
+	})
 }
 
 // ACTIVAR / DESACTIVAR
@@ -423,21 +425,23 @@ func (h *ClienteHandler) ToggleClienteEstado(c *gin.Context) {
 	var req clienteCedulaRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "datos inválidos",
+		})
 		return
 	}
 
-	result, err := h.q.ToggleClienteEstado(c.Request.Context(), req.Cedula)
+	_, err := h.repository.ToggleEstado(
+		c.Request.Context(),
+		req.Cedula,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error cambiando estado"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "cliente no existe"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "estado actualizado"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "estado actualizado",
+	})
 }

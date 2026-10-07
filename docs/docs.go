@@ -554,21 +554,22 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Devuelve la lista completa de detalles de reserva",
+                "description": "Obtiene todos los detalles de reserva, activos e inactivos",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "detalles-reserva"
                 ],
-                "summary": "Obtener todos los detalles de reserva",
+                "summary": "Obtener detalles de reserva",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/handlers.detalleReservaResponse"
+                                "type": "object",
+                                "additionalProperties": true
                             }
                         }
                     },
@@ -576,18 +577,14 @@ const docTemplate = `{
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -598,7 +595,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Registra un nuevo detalle de reserva con cálculos de precios, impuestos y descuentos",
+                "description": "Agrega una habitación a una reserva y calcula tarifa, descuento, subtotal, IVA y total",
                 "consumes": [
                     "application/json"
                 ],
@@ -611,8 +608,8 @@ const docTemplate = `{
                 "summary": "Crear detalle de reserva",
                 "parameters": [
                     {
-                        "description": "Datos del detalle de reserva",
-                        "name": "detalle",
+                        "description": "Datos del detalle",
+                        "name": "datos",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -632,27 +629,204 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/detalles-reserva/habitacion/{idHabitacion}/fechas-ocupadas": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Obtiene los rangos de fechas ocupados por detalles activos",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "detalles-reserva"
+                ],
+                "summary": "Obtener fechas ocupadas de una habitación",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID de la habitación",
+                        "name": "idHabitacion",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "type": "string"
+                                }
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/detalles-reserva/habitacion/{idHabitacion}/tarifa": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Obtiene la tarifa activa correspondiente a una habitación para una fecha determinada",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "detalles-reserva"
+                ],
+                "summary": "Obtener tarifa por habitación y fecha",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID de la habitación",
+                        "name": "idHabitacion",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fecha en formato YYYY-MM-DD",
+                        "name": "fecha",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/detalles-reserva/reserva/{idReserva}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Obtiene los detalles activos pertenecientes a una reserva",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "detalles-reserva"
+                ],
+                "summary": "Obtener detalles por reserva",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID de la reserva",
+                        "name": "idReserva",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -665,7 +839,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Busca un detalle de reserva por su ID",
+                "description": "Obtiene un detalle de reserva específico",
                 "produces": [
                     "application/json"
                 ],
@@ -676,7 +850,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "ID del detalle de reserva",
+                        "description": "ID del detalle",
                         "name": "idDetalleReserva",
                         "in": "path",
                         "required": true
@@ -686,54 +860,94 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.detalleReservaResponse"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Alterna el estado lógico del detalle entre activo e inactivo",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "detalles-reserva"
+                ],
+                "summary": "Activar o desactivar detalle de reserva",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID del detalle",
+                        "name": "idDetalleReserva",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
             },
-            "put": {
+            "patch": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Actualiza los datos de un detalle de reserva existente",
+                "description": "Actualiza habitación, cantidad de personas y opcionalmente las fechas del detalle",
                 "consumes": [
                     "application/json"
                 ],
@@ -747,14 +961,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "ID del detalle de reserva",
+                        "description": "ID del detalle",
                         "name": "idDetalleReserva",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Datos a actualizar",
-                        "name": "detalle",
+                        "description": "Datos actualizados",
+                        "name": "datos",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -774,96 +988,28 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Cambia el estado del detalle de reserva (activo/inactivo)",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "detalles-reserva"
-                ],
-                "summary": "Eliminar/Activar detalle de reserva (soft delete)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID del detalle de reserva",
-                        "name": "idDetalleReserva",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
                             "additionalProperties": true
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -955,6 +1101,50 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/habitaciones/disponibles": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Obtiene habitaciones activas con tipo y tarifa activos y con tarifa vigente actualmente",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "habitaciones"
+                ],
+                "summary": "Obtener habitaciones disponibles",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "401": {
@@ -1276,7 +1466,7 @@ const docTemplate = `{
         },
         "/login": {
             "post": {
-                "description": "Autentica un usuario y retorna un token JWT",
+                "description": "Autentica un usuario y retorna un token PASETO",
                 "consumes": [
                     "application/json"
                 ],
@@ -1810,21 +2000,22 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Devuelve la lista completa de reservas",
+                "description": "Obtiene todas las reservas activas",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "reservas"
                 ],
-                "summary": "Obtener todas las reservas",
+                "summary": "Obtener reservas",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "type": "object"
+                                "type": "object",
+                                "additionalProperties": true
                             }
                         }
                     },
@@ -1832,18 +2023,14 @@ const docTemplate = `{
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -1854,7 +2041,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Registra una nueva reserva en el sistema",
+                "description": "Registra una nueva reserva",
                 "consumes": [
                     "application/json"
                 ],
@@ -1868,7 +2055,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "description": "Datos de la reserva",
-                        "name": "reserva",
+                        "name": "datos",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -1888,27 +2075,21 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -1921,7 +2102,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Busca reservas por ID de cliente",
+                "description": "Obtiene las reservas activas asociadas a un cliente",
                 "produces": [
                     "application/json"
                 ],
@@ -1932,7 +2113,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID del cliente",
+                        "description": "Cédula del cliente",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1944,7 +2125,8 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "type": "object"
+                                "type": "object",
+                                "additionalProperties": true
                             }
                         }
                     },
@@ -1952,18 +2134,14 @@ const docTemplate = `{
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -1976,7 +2154,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Busca reservas por ID de recepcionista",
+                "description": "Obtiene las reservas activas asociadas a un recepcionista",
                 "produces": [
                     "application/json"
                 ],
@@ -1987,7 +2165,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID del recepcionista",
+                        "description": "Cédula del recepcionista",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1999,7 +2177,8 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "type": "object"
+                                "type": "object",
+                                "additionalProperties": true
                             }
                         }
                     },
@@ -2007,18 +2186,14 @@ const docTemplate = `{
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -2031,7 +2206,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Busca una reserva por su ID",
+                "description": "Obtiene una reserva activa utilizando su ID",
                 "produces": [
                     "application/json"
                 ],
@@ -2052,34 +2227,32 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object"
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -2090,7 +2263,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Actualiza los datos de una reserva existente",
+                "description": "Actualiza la información de una reserva existente",
                 "consumes": [
                     "application/json"
                 ],
@@ -2110,8 +2283,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Datos a actualizar",
-                        "name": "reserva",
+                        "description": "Datos actualizados de la reserva",
+                        "name": "datos",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -2124,45 +2297,28 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -2173,14 +2329,14 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Cambia el estado de la reserva en vez de borrarla físicamente",
+                "description": "Alterna el estado lógico de una reserva entre activo e inactivo",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "reservas"
                 ],
-                "summary": "Eliminar reserva (soft delete)",
+                "summary": "Activar o desactivar reserva",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2195,45 +2351,96 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/reservas/{id}/estado": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Modifica el estado descriptivo de una reserva",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservas"
+                ],
+                "summary": "Actualizar estado de reserva",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID de la reserva",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Nuevo estado de la reserva",
+                        "name": "datos",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.updateEstadoReservaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -2350,26 +2557,26 @@ const docTemplate = `{
                 }
             }
         },
-        "/tarifas/{idTarifa}": {
-            "delete": {
+        "/tarifas/nombre/{nombreTarifa}": {
+            "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Elimina una tarifa del sistema (soft delete)",
+                "description": "Busca una tarifa por su nombre",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "tarifas"
                 ],
-                "summary": "Eliminar tarifa",
+                "summary": "Obtener tarifa por nombre",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "ID de la tarifa",
-                        "name": "idTarifa",
+                        "type": "string",
+                        "description": "Nombre de la tarifa",
+                        "name": "nombreTarifa",
                         "in": "path",
                         "required": true
                     }
@@ -2378,12 +2585,11 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.tarifaResponse"
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2391,8 +2597,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2410,7 +2616,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/tarifas/{idTarifa}": {
             "patch": {
                 "security": [
                     {
@@ -2484,26 +2692,26 @@ const docTemplate = `{
                 }
             }
         },
-        "/tarifas/{nombreTarifa}": {
-            "get": {
+        "/tarifas/{idTarifa}/activar": {
+            "patch": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Busca una tarifa por su nombre",
+                "description": "Activa una tarifa si se encuentra dentro de su periodo de vigencia",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "tarifas"
                 ],
-                "summary": "Obtener tarifa por nombre",
+                "summary": "Activar tarifa",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Nombre de la tarifa",
-                        "name": "nombreTarifa",
+                        "type": "integer",
+                        "description": "ID de la tarifa",
+                        "name": "idTarifa",
                         "in": "path",
                         "required": true
                     }
@@ -2512,7 +2720,17 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.tarifaResponse"
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "401": {
@@ -2526,6 +2744,121 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/tarifas/{idTarifa}/desactivar": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Desactiva manualmente una tarifa",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tarifas"
+                ],
+                "summary": "Desactivar tarifa",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID de la tarifa",
+                        "name": "idTarifa",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/tarifas/{idTarifa}/estadisticas": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Obtiene la cantidad de reservas que utilizaron la tarifa y la última vez que fue utilizada",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tarifas"
+                ],
+                "summary": "Obtener estadísticas de una tarifa",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID de la tarifa",
+                        "name": "idTarifa",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -3029,68 +3362,20 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Devuelve la lista completa de tipos de habitación",
+                "description": "Obtiene todos los tipos de habitación y permite filtrar por estado",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "tipos-habitacion"
                 ],
-                "summary": "Obtener todos los tipos de habitación",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Registra un nuevo tipo de habitación en el sistema",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "tipos-habitacion"
-                ],
-                "summary": "Crear tipo de habitación",
+                "summary": "Obtener tipos de habitación",
                 "parameters": [
                     {
-                        "description": "Datos del tipo de habitación",
-                        "name": "tipoHabitacion",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.registerTipoHabitacionRequest"
-                        }
+                        "type": "integer",
+                        "description": "Estado: 0 inactivo, 1 activo",
+                        "name": "estado",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3105,27 +3390,66 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Registra un nuevo tipo de habitación",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tipos-habitacion"
+                ],
+                "summary": "Crear tipo de habitación",
+                "parameters": [
+                    {
+                        "description": "Datos del tipo de habitación",
+                        "name": "datos",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.registerTipoHabitacionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -3138,7 +3462,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Busca un tipo de habitación por su ID",
+                "description": "Obtiene la información de un tipo de habitación específico",
                 "produces": [
                     "application/json"
                 ],
@@ -3167,36 +3491,21 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -3227,8 +3536,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Datos a actualizar",
-                        "name": "tipoHabitacion",
+                        "description": "Datos actualizados del tipo de habitación",
+                        "name": "datos",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -3241,45 +3550,28 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -3290,14 +3582,14 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Cambia el estado del tipo de habitación en vez de borrarlo físicamente",
+                "description": "Realiza la eliminación lógica de un tipo de habitación cambiando su estado",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "tipos-habitacion"
                 ],
-                "summary": "Eliminar tipo de habitación (soft delete)",
+                "summary": "Desactivar tipo de habitación",
                 "parameters": [
                     {
                         "type": "integer",
@@ -3312,45 +3604,28 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -3363,21 +3638,22 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Devuelve la lista de usuarios activos",
+                "description": "Obtiene la lista de usuarios registrados",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "usuarios"
                 ],
-                "summary": "Obtener todos los usuarios",
+                "summary": "Obtener usuarios",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "type": "object"
+                                "type": "object",
+                                "additionalProperties": true
                             }
                         }
                     },
@@ -3385,99 +3661,24 @@ const docTemplate = `{
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Actualiza datos del usuario (con o sin password)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Actualizar usuario",
-                "parameters": [
-                    {
-                        "description": "Datos a actualizar",
-                        "name": "user",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.updateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Registra un nuevo usuario en el sistema",
                 "consumes": [
                     "application/json"
@@ -3486,13 +3687,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "usuarios"
                 ],
                 "summary": "Crear usuario",
                 "parameters": [
                     {
                         "description": "Datos del usuario",
-                        "name": "user",
+                        "name": "datos",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -3505,57 +3706,99 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
-            },
-            "delete": {
+            }
+        },
+        "/users/download/{filename}": {
+            "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Cambia el estado del usuario en vez de borrarlo físicamente",
+                "description": "Descarga o muestra una imagen de usuario almacenada en el servidor",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "usuarios"
+                ],
+                "summary": "Obtener imagen de usuario",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nombre del archivo",
+                        "name": "filename",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/users/upload": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Sube una imagen para utilizarla en el perfil de un usuario",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "usuarios"
                 ],
-                "summary": "Eliminar usuario (soft delete)",
+                "summary": "Subir imagen de usuario",
                 "parameters": [
                     {
-                        "description": "ID del usuario",
-                        "name": "user",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.deleteRequest"
-                        }
+                        "type": "file",
+                        "description": "Imagen del usuario",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -3563,45 +3806,28 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -3614,18 +3840,18 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Busca un usuario por su correo electrónico",
+                "description": "Obtiene un usuario activo utilizando su correo electrónico",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "users"
+                    "usuarios"
                 ],
-                "summary": "Obtener usuario por email",
+                "summary": "Obtener usuario por correo",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Email del usuario",
+                        "description": "Correo electrónico del usuario",
                         "name": "email",
                         "in": "path",
                         "required": true
@@ -3635,28 +3861,144 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "object"
-                            }
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Actualiza la información de un usuario existente",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "usuarios"
+                ],
+                "summary": "Actualizar usuario",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID del usuario",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Datos actualizados del usuario",
+                        "name": "datos",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.updateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Alterna el estado del usuario entre activo e inactivo",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "usuarios"
+                ],
+                "summary": "Activar o desactivar usuario",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID del usuario",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -3667,6 +4009,9 @@ const docTemplate = `{
         "handlers.UpdateTarifaRequest": {
             "type": "object",
             "properties": {
+                "descripcion": {
+                    "type": "string"
+                },
                 "fechaFin": {
                     "type": "string"
                 },
@@ -3680,7 +4025,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "precioBase": {
-                    "type": "string"
+                    "type": "number"
                 }
             }
         },
@@ -3756,6 +4101,12 @@ const docTemplate = `{
                 "precioBase"
             ],
             "properties": {
+                "descripcion": {
+                    "type": "string"
+                },
+                "estado": {
+                    "type": "integer"
+                },
                 "fechaFin": {
                     "type": "string"
                 },
@@ -3769,7 +4120,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "precioBase": {
-                    "type": "string"
+                    "type": "number"
                 }
             }
         },
@@ -3783,21 +4134,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "descuentoBase": {
-                    "type": "string"
+                    "type": "number"
                 },
                 "nombreTipoC": {
                     "type": "string"
-                }
-            }
-        },
-        "handlers.deleteRequest": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "id": {
-                    "type": "integer"
                 }
             }
         },
@@ -3809,62 +4149,6 @@ const docTemplate = `{
             "properties": {
                 "idTipoCliente": {
                     "type": "integer"
-                }
-            }
-        },
-        "handlers.detalleReservaResponse": {
-            "type": "object",
-            "properties": {
-                "Estado": {
-                    "type": "string"
-                },
-                "Iva": {
-                    "type": "string"
-                },
-                "Total": {
-                    "type": "string"
-                },
-                "cantidadPersonas": {
-                    "type": "integer"
-                },
-                "estadoReserva": {
-                    "type": "string"
-                },
-                "fechaEntrada": {
-                    "type": "string"
-                },
-                "fechaReserva": {
-                    "type": "string"
-                },
-                "fechaSalida": {
-                    "type": "string"
-                },
-                "idDetalleReserva": {
-                    "type": "integer"
-                },
-                "nombreCliente": {
-                    "type": "string"
-                },
-                "nombreRecepcionista": {
-                    "type": "string"
-                },
-                "nombreTarifa": {
-                    "type": "string"
-                },
-                "nombreTipoCliente": {
-                    "type": "string"
-                },
-                "nombreTipoHabitacion": {
-                    "type": "string"
-                },
-                "numeroHabitacion": {
-                    "type": "string"
-                },
-                "precioAplicado": {
-                    "type": "string"
-                },
-                "subTotal": {
-                    "type": "string"
                 }
             }
         },
@@ -3979,7 +4263,13 @@ const docTemplate = `{
                 "password"
             ],
             "properties": {
+                "cedula": {
+                    "type": "string"
+                },
                 "email": {
+                    "type": "string"
+                },
+                "image": {
                     "type": "string"
                 },
                 "name": {
@@ -3996,16 +4286,12 @@ const docTemplate = `{
         "handlers.registerReservaRequest": {
             "type": "object",
             "required": [
-                "cantidadNoches",
                 "estadoReserva",
                 "fechaReserva",
                 "idCliente",
                 "idRecepcionista"
             ],
             "properties": {
-                "cantidadNoches": {
-                    "type": "integer"
-                },
                 "estadoReserva": {
                     "type": "string"
                 },
@@ -4017,6 +4303,15 @@ const docTemplate = `{
                 },
                 "idRecepcionista": {
                     "type": "string"
+                },
+                "iva": {
+                    "type": "number"
+                },
+                "subTotal": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
                 }
             }
         },
@@ -4042,6 +4337,12 @@ const docTemplate = `{
         "handlers.tarifaResponse": {
             "type": "object",
             "properties": {
+                "desactivadaManual": {
+                    "type": "integer"
+                },
+                "descripcion": {
+                    "type": "string"
+                },
                 "estado": {
                     "type": "string"
                 },
@@ -4058,7 +4359,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "preciobase": {
-                    "type": "string"
+                    "type": "number"
                 },
                 "tipohabitacion": {
                     "type": "string"
@@ -4082,7 +4383,6 @@ const docTemplate = `{
                 "apellidos",
                 "cedula",
                 "direccion",
-                "estado",
                 "idTipoCliente",
                 "nombre",
                 "telefono"
@@ -4132,6 +4432,17 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.updateEstadoReservaRequest": {
+            "type": "object",
+            "required": [
+                "estadoReserva"
+            ],
+            "properties": {
+                "estadoReserva": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.updateHabitacionRequest": {
             "type": "object",
             "required": [
@@ -4156,7 +4467,6 @@ const docTemplate = `{
                 "apellidos",
                 "cedula",
                 "correo",
-                "estado",
                 "nombre",
                 "telefono"
             ],
@@ -4183,18 +4493,18 @@ const docTemplate = `{
         },
         "handlers.updateRequest": {
             "type": "object",
-            "required": [
-                "id"
-            ],
             "properties": {
+                "cedula": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
                 "estado": {
                     "type": "integer"
                 },
-                "id": {
-                    "type": "integer"
+                "image": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
@@ -4210,16 +4520,12 @@ const docTemplate = `{
         "handlers.updateReservaRequest": {
             "type": "object",
             "required": [
-                "cantidadNoches",
                 "estadoReserva",
                 "fechaReserva",
                 "idCliente",
                 "idRecepcionista"
             ],
             "properties": {
-                "cantidadNoches": {
-                    "type": "integer"
-                },
                 "estado": {
                     "type": "integer"
                 },
@@ -4234,6 +4540,15 @@ const docTemplate = `{
                 },
                 "idRecepcionista": {
                     "type": "string"
+                },
+                "iva": {
+                    "type": "number"
+                },
+                "subTotal": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
                 }
             }
         },
@@ -4248,7 +4563,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "descuentoBase": {
-                    "type": "string"
+                    "type": "number"
                 },
                 "estado": {
                     "type": "integer"

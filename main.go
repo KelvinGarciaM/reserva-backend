@@ -6,7 +6,6 @@ import (
 
 	"reserva-backend/api"
 	docs "reserva-backend/docs"
-	"reserva-backend/dto"
 	"reserva-backend/repository"
 	"reserva-backend/utils"
 
@@ -47,11 +46,32 @@ func main() {
 	}
 
 	log.Println("Conexión con SQL Server establecida correctamente")
-	// 3. SQLC temporalmente continua para los modulos donde no hemos hecho la migracion
-	dbtx := dto.New(conn)
-	//esto es neuvo para la migracion de mysql a sql server
+
+	// Repositorios para acceso a datos en SQL Server
 	tipoHabitacionRepository :=
 		repository.NewTipoHabitacionRepository(conn)
+
+	tipoClienteRepository :=
+		repository.NewTipoClienteRepository(conn)
+
+	recepcionistaRepository :=
+		repository.NewRecepcionistaRepository(conn)
+
+	clienteRepository :=
+		repository.NewClienteRepository(conn)
+
+	tarifaRepository :=
+		repository.NewTarifaRepository(conn)
+
+	habitacionRepository :=
+		repository.NewHabitacionRepository(conn)
+
+	reservaRepository :=
+		repository.NewReservaRepository(conn)
+
+	detalleReservaRepository :=
+		repository.NewDetalleReservaRepository(conn)
+
 	usuarioRepository :=
 		repository.NewUsuarioRepository(conn)
 
@@ -69,8 +89,14 @@ func main() {
 	)
 	// 5. Server
 	server, err := api.NewServer(
-		dbtx,
 		tipoHabitacionRepository,
+		tipoClienteRepository,
+		recepcionistaRepository,
+		clienteRepository,
+		tarifaRepository,
+		habitacionRepository,
+		reservaRepository,
+		detalleReservaRepository,
 		usuarioRepository,
 		config.TokenSymmetricKey,
 	)
