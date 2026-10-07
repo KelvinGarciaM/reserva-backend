@@ -45,7 +45,7 @@ type loginUser struct {
 	Email  string         `json:"email"`
 	Role   string         `json:"role"`
 	Image  string         `json:"image"`
-	Cedula sql.NullString `json:"cedula"`
+	Cedula sql.NullString `json:"cedula" swaggerignore:"true"`
 }
 
 type loginResponse struct {

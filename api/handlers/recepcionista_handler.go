@@ -1,21 +1,23 @@
 package handlers
 
 import (
-	"database/sql"
-	"errors"
 	"net/http"
 
-	"reserva-backend/dto"
+	"reserva-backend/repository"
 
 	"github.com/gin-gonic/gin"
 )
 
 type RecepcionistaHandler struct {
-	q *dto.Queries
+	repository *repository.RecepcionistaRepository
 }
 
-func NewRecepcionistaHandler(q *dto.Queries) *RecepcionistaHandler {
-	return &RecepcionistaHandler{q}
+func NewRecepcionistaHandler(
+	repository *repository.RecepcionistaRepository,
+) *RecepcionistaHandler {
+	return &RecepcionistaHandler{
+		repository: repository,
+	}
 }
 
 /* =========================
@@ -36,7 +38,7 @@ type updateRecepcionistaRequest struct {
 	Apellidos string `json:"apellidos" binding:"required"`
 	Telefono  string `json:"telefono" binding:"required"`
 	Correo    string `json:"correo" binding:"required"`
-	Estado    int8   `json:"estado" binding:"required"`
+	Estado    int8   `json:"estado"`
 }
 
 type recepcionistaCedulaRequest struct {
@@ -63,30 +65,29 @@ func (h *RecepcionistaHandler) CreateRecepcionista(c *gin.Context) {
 	var req createRecepcionistaRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "datos inválidos",
+		})
 		return
 	}
 
-	result, err := h.q.CreateRecepcionista(c.Request.Context(), dto.CreateRecepcionistaParams{
-		Cedula:    req.Cedula,
-		Nombre:    req.Nombre,
-		Apellidos: req.Apellidos,
-		Telefono:  req.Telefono,
-		Correo:    req.Correo,
-	})
+	resultado, err := h.repository.Crear(
+		c.Request.Context(),
+		req.Cedula,
+		req.Nombre,
+		req.Apellidos,
+		req.Telefono,
+		req.Correo,
+	)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error creando recepcionista"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se creó el recepcionista"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "recepcionista creado"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": resultado.Mensaje,
+	})
 }
 
 /* =========================
@@ -103,13 +104,18 @@ func (h *RecepcionistaHandler) CreateRecepcionista(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /recepcionistas [get]
 func (h *RecepcionistaHandler) GetRecepcionistas(c *gin.Context) {
-	data, err := h.q.GetRecepcionistas(c.Request.Context())
+
+	recepcionistas, err := h.repository.Listar(
+		c.Request.Context(),
+		nil,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error obteniendo recepcionistas"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, data)
+	c.JSON(http.StatusOK, recepcionistas)
 }
 
 // GetRecepcionistaByCedula godoc
@@ -125,19 +131,27 @@ func (h *RecepcionistaHandler) GetRecepcionistas(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /recepcionistas/{cedula} [get]
 func (h *RecepcionistaHandler) GetRecepcionistaByCedula(c *gin.Context) {
+
 	cedula := c.Param("cedula")
 
-	data, err := h.q.GetRecepcionistaByCedula(c.Request.Context(), cedula)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "no existe"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error"})
+	if cedula == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "cédula requerida",
+		})
 		return
 	}
 
-	c.JSON(http.StatusOK, data)
+	recepcionista, err := h.repository.ObtenerPorCedula(
+		c.Request.Context(),
+		cedula,
+	)
+
+	if err != nil {
+		responderErrorSQLServer(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, recepcionista)
 }
 
 // SearchRecepcionistas godoc
@@ -153,30 +167,27 @@ func (h *RecepcionistaHandler) GetRecepcionistaByCedula(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /recepcionistas/buscar [get]
 func (h *RecepcionistaHandler) SearchRecepcionistas(c *gin.Context) {
-	query := c.Query("q")
 
-	if query == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "q requerido"})
+	busqueda := c.Query("q")
+
+	if busqueda == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "parámetro q requerido",
+		})
 		return
 	}
 
-	data, err := h.q.SearchRecepcionistas(
+	recepcionistas, err := h.repository.Buscar(
 		c.Request.Context(),
-		dto.SearchRecepcionistasParams{
-			CONCAT:   query,
-			CONCAT_2: query,
-			CONCAT_3: query,
-			CONCAT_4: query,
-			CONCAT_5: query,
-		},
+		busqueda,
 	)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error buscando"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, data)
+	c.JSON(http.StatusOK, recepcionistas)
 }
 
 /* =========================
@@ -200,25 +211,37 @@ func (h *RecepcionistaHandler) UpdateRecepcionista(c *gin.Context) {
 	var req updateRecepcionistaRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "datos inválidos",
+		})
 		return
 	}
 
-	_, err := h.q.UpdateRecepcionista(c.Request.Context(), dto.UpdateRecepcionistaParams{
-		Nombre:    req.Nombre,
-		Apellidos: req.Apellidos,
-		Telefono:  req.Telefono,
-		Correo:    req.Correo,
-		Estado:    req.Estado,
-		Cedula:    req.Cedula,
-	})
+	if req.Estado != 0 && req.Estado != 1 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "el estado debe ser 0 o 1",
+		})
+		return
+	}
+
+	resultado, err := h.repository.Actualizar(
+		c.Request.Context(),
+		req.Cedula,
+		req.Nombre,
+		req.Apellidos,
+		req.Telefono,
+		req.Correo,
+		req.Estado,
+	)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error actualizando"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "actualizado"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": resultado.Mensaje,
+	})
 }
 
 /* =========================
@@ -242,23 +265,25 @@ func (h *RecepcionistaHandler) DeleteRecepcionista(c *gin.Context) {
 	var req recepcionistaCedulaRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "datos inválidos",
+		})
 		return
 	}
 
-	result, err := h.q.DeleteRecepcionista(c.Request.Context(), req.Cedula)
+	resultado, err := h.repository.Eliminar(
+		c.Request.Context(),
+		req.Cedula,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "no existe"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "desactivado"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": resultado.Mensaje,
+	})
 }
 
 // ToggleRecepcionistaEstado godoc
@@ -279,21 +304,24 @@ func (h *RecepcionistaHandler) ToggleRecepcionistaEstado(c *gin.Context) {
 	var req recepcionistaCedulaRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "datos inválidos",
+		})
 		return
 	}
 
-	result, err := h.q.ToggleRecepcionistaEstado(c.Request.Context(), req.Cedula)
+	resultado, err := h.repository.ToggleEstado(
+		c.Request.Context(),
+		req.Cedula,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "no existe"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "estado actualizado"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": resultado.Mensaje,
+		"estado":  resultado.Estado,
+	})
 }

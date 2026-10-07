@@ -2,28 +2,30 @@ package handlers
 
 import (
 	"database/sql"
+	"errors"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 
-	"reserva-backend/dto"
+	"reserva-backend/repository"
 	"reserva-backend/security"
 
-	"errors"
-
 	"github.com/gin-gonic/gin"
-	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 )
 
 type UserHandler struct {
-	q *dto.Queries
+	repository *repository.UsuarioRepository
 }
 
-func NewUserHandler(q *dto.Queries) *UserHandler {
-	return &UserHandler{q}
+func NewUserHandler(
+	repository *repository.UsuarioRepository,
+) *UserHandler {
+	return &UserHandler{
+		repository: repository,
+	}
 }
 
 /* =========================
@@ -53,139 +55,262 @@ type updateRequest struct {
    HANDLERS
 ========================= */
 
+// Register godoc
+// @Summary Crear usuario
+// @Description Registra un nuevo usuario en el sistema
+// @Tags usuarios
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param datos body registerRequest true "Datos del usuario"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Router /users [post]
 func (h *UserHandler) Register(c *gin.Context) {
 	var req registerRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "datos inválidos",
+		})
 		return
 	}
 
 	hash, err := security.HashPassword(req.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al encriptar password"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "error al encriptar password",
+		})
 		return
 	}
 
-	err = h.q.CreateUser(c.Request.Context(), dto.CreateUserParams{
-		Name:     req.Name,
-		Email:    req.Email,
-		Password: hash,
-		Role:     sql.NullString{String: req.Role, Valid: req.Role != ""},
-		Image:    sql.NullString{String: req.Image, Valid: req.Image != ""},
-		Cedula:   sql.NullString{String: req.Cedula, Valid: req.Cedula != ""},
-	})
+	_, err = h.repository.Crear(
+		c.Request.Context(),
+		req.Name,
+		req.Email,
+		hash,
+		req.Role,
+		req.Image,
+		req.Cedula,
+	)
 
 	if err != nil {
-		var mysqlErr *mysql.MySQLError
-		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "el correo ya está registrado"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error creando usuario"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "usuario creado"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "usuario creado",
+	})
 }
 
+// GetUsers godoc
+// @Summary Obtener usuarios
+// @Description Obtiene la lista de usuarios registrados
+// @Tags usuarios
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /users [get]
 func (h *UserHandler) GetUsers(c *gin.Context) {
-	users, err := h.q.GetUsers(c.Request.Context())
+
+	users, err := h.repository.Listar(
+		c.Request.Context(),
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error obteniendo usuarios"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "error obteniendo usuarios",
+		})
 		return
 	}
+
 	c.JSON(http.StatusOK, users)
 }
 
+// GetUserByEmail godoc
+// @Summary Obtener usuario por correo
+// @Description Obtiene un usuario activo utilizando su correo electrónico
+// @Tags usuarios
+// @Produce json
+// @Security BearerAuth
+// @Param email path string true "Correo electrónico del usuario"
+// @Success 200 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /users/{email} [get]
 func (h *UserHandler) GetUserByEmail(c *gin.Context) {
+
 	email := c.Param("email")
 
-	user, err := h.q.GetUserByEmail(c.Request.Context(), email)
+	user, err := h.repository.ObtenerPorEmail(
+		c.Request.Context(),
+		email,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "usuario no encontrado o inactivo"})
+
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "usuario no encontrado o inactivo",
+			})
+			return
+		}
+
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "usuario no encontrado o inactivo",
+		})
 		return
 	}
 
-	user.Password = ""
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, gin.H{
+		"id":         user.ID,
+		"name":       user.Name,
+		"role":       user.Role,
+		"email":      user.Email,
+		"password":   "",
+		"image":      user.Image,
+		"cedula":     user.Cedula,
+		"created_at": user.CreatedAt,
+		"updated_at": user.UpdatedAt,
+		"estado":     user.Estado,
+	})
 }
 
+// UpdateUser godoc
+// @Summary Actualizar usuario
+// @Description Actualiza la información de un usuario existente
+// @Tags usuarios
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID del usuario"
+// @Param datos body updateRequest true "Datos actualizados del usuario"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
+
 	idStr := c.Param("id")
+
 	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "id inválido",
+		})
 		return
 	}
 
 	var req updateRequest
+
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
 
-	var result sql.Result
+	var passwordHash *string
+	var estado *int8
 
 	if req.Password != "" {
-		hash, errHash := security.HashPassword(req.Password)
-		if errHash != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error al encriptar password"})
+
+		hash, err := security.HashPassword(req.Password)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "error al encriptar password",
+			})
 			return
 		}
-		result, err = h.q.UpdateUserWithPassword(c.Request.Context(), dto.UpdateUserWithPasswordParams{
-			Name:     req.Name,
-			Role:     sql.NullString{String: req.Role, Valid: req.Role != ""},
-			Email:    req.Email,
-			Password: hash,
-			Image:    sql.NullString{String: req.Image, Valid: req.Image != ""},
-			Cedula:   sql.NullString{String: req.Cedula, Valid: req.Cedula != ""},
-			Estado:   req.Estado,
-			ID:       int32(id),
-		})
-	} else {
-		result, err = h.q.UpdateUserWithoutPassword(c.Request.Context(), dto.UpdateUserWithoutPasswordParams{
-			Name:   req.Name,
-			Role:   sql.NullString{String: req.Role, Valid: req.Role != ""},
-			Email:  req.Email,
-			Image:  sql.NullString{String: req.Image, Valid: req.Image != ""},
-			Cedula: sql.NullString{String: req.Cedula, Valid: req.Cedula != ""},
-			ID:     int32(id),
-		})
+
+		passwordHash = &hash
+
+		// El backend original solo actualizaba estado
+		// cuando se utilizaba UpdateUserWithPassword.
+		estado = &req.Estado
 	}
 
+	_, err = h.repository.Actualizar(
+		c.Request.Context(),
+		int32(id),
+		req.Name,
+		req.Email,
+		req.Role,
+		req.Image,
+		req.Cedula,
+		passwordHash,
+		estado,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error actualizando usuario"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	_ = result
-	c.JSON(http.StatusOK, gin.H{"message": "usuario actualizado"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "usuario actualizado",
+	})
 }
 
+// ToggleUserStatus godoc
+// @Summary Activar o desactivar usuario
+// @Description Alterna el estado del usuario entre activo e inactivo
+// @Tags usuarios
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID del usuario"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /users/{id} [delete]
 func (h *UserHandler) ToggleUserStatus(c *gin.Context) {
+
 	idStr := c.Param("id")
+
 	id, err := strconv.Atoi(idStr)
+
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "id inválido",
+		})
+		return
+	}
+
+	_, err = h.repository.ToggleEstado(
+		c.Request.Context(),
+		int32(id),
+	)
+
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
+		responderErrorSQLServer(c, err)
 		return
 	}
 
-	result, err := h.q.ToggleUserStatus(c.Request.Context(), int32(id))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error alternando estado del usuario"})
-		return
-	}
-
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "usuario no existe"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "estado del usuario alternado"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "estado del usuario alternado",
+	})
 }
 
+// UploadUserImg godoc
+// @Summary Subir imagen de usuario
+// @Description Sube una imagen para utilizarla en el perfil de un usuario
+// @Tags usuarios
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param file formData file true "Imagen del usuario"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /users/upload [post]
 func (h *UserHandler) UploadUserImg(c *gin.Context) {
 	fileHeader, err := c.FormFile("file0")
 	if err != nil {
@@ -227,6 +352,17 @@ func (h *UserHandler) UploadUserImg(c *gin.Context) {
 	})
 }
 
+// DownloadUserImg godoc
+// @Summary Obtener imagen de usuario
+// @Description Descarga o muestra una imagen de usuario almacenada en el servidor
+// @Tags usuarios
+// @Produce application/octet-stream
+// @Security BearerAuth
+// @Param filename path string true "Nombre del archivo"
+// @Success 200 {file} binary
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /users/download/{filename} [get]
 func (h *UserHandler) DownloadUserImg(c *gin.Context) {
 	filename := c.Param("filename")
 	if filename == "" {

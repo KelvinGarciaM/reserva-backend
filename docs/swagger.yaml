@@ -2,6 +2,8 @@ basePath: /api/v1
 definitions:
   handlers.UpdateTarifaRequest:
     properties:
+      descripcion:
+        type: string
       fechaFin:
         type: string
       fechaInicio:
@@ -11,7 +13,7 @@ definitions:
       nombreTarifa:
         type: string
       precioBase:
-        type: string
+        type: number
     type: object
   handlers.clienteCedulaRequest:
     properties:
@@ -59,6 +61,10 @@ definitions:
     type: object
   handlers.createTarifaRequest:
     properties:
+      descripcion:
+        type: string
+      estado:
+        type: integer
       fechaFin:
         type: string
       fechaInicio:
@@ -68,7 +74,7 @@ definitions:
       nombreTarifa:
         type: string
       precioBase:
-        type: string
+        type: number
     required:
     - idTipoHabitacion
     - nombreTarifa
@@ -79,18 +85,11 @@ definitions:
       descripcion:
         type: string
       descuentoBase:
-        type: string
+        type: number
       nombreTipoC:
         type: string
     required:
     - nombreTipoC
-    type: object
-  handlers.deleteRequest:
-    properties:
-      id:
-        type: integer
-    required:
-    - id
     type: object
   handlers.deleteTipoClienteRequest:
     properties:
@@ -98,43 +97,6 @@ definitions:
         type: integer
     required:
     - idTipoCliente
-    type: object
-  handlers.detalleReservaResponse:
-    properties:
-      Estado:
-        type: string
-      Iva:
-        type: string
-      Total:
-        type: string
-      cantidadPersonas:
-        type: integer
-      estadoReserva:
-        type: string
-      fechaEntrada:
-        type: string
-      fechaReserva:
-        type: string
-      fechaSalida:
-        type: string
-      idDetalleReserva:
-        type: integer
-      nombreCliente:
-        type: string
-      nombreRecepcionista:
-        type: string
-      nombreTarifa:
-        type: string
-      nombreTipoCliente:
-        type: string
-      nombreTipoHabitacion:
-        type: string
-      numeroHabitacion:
-        type: string
-      precioAplicado:
-        type: string
-      subTotal:
-        type: string
     type: object
   handlers.loginRequest:
     properties:
@@ -207,7 +169,11 @@ definitions:
     type: object
   handlers.registerRequest:
     properties:
+      cedula:
+        type: string
       email:
+        type: string
+      image:
         type: string
       name:
         type: string
@@ -222,8 +188,6 @@ definitions:
     type: object
   handlers.registerReservaRequest:
     properties:
-      cantidadNoches:
-        type: integer
       estadoReserva:
         type: string
       fechaReserva:
@@ -232,8 +196,13 @@ definitions:
         type: string
       idRecepcionista:
         type: string
+      iva:
+        type: number
+      subTotal:
+        type: number
+      total:
+        type: number
     required:
-    - cantidadNoches
     - estadoReserva
     - fechaReserva
     - idCliente
@@ -254,6 +223,10 @@ definitions:
     type: object
   handlers.tarifaResponse:
     properties:
+      desactivadaManual:
+        type: integer
+      descripcion:
+        type: string
       estado:
         type: string
       fechafin:
@@ -265,7 +238,7 @@ definitions:
       nombretarifa:
         type: string
       preciobase:
-        type: string
+        type: number
       tipohabitacion:
         type: string
     type: object
@@ -296,7 +269,6 @@ definitions:
     - apellidos
     - cedula
     - direccion
-    - estado
     - idTipoCliente
     - nombre
     - telefono
@@ -314,6 +286,13 @@ definitions:
     required:
     - cantidadPersonas
     - idHabitacion
+    type: object
+  handlers.updateEstadoReservaRequest:
+    properties:
+      estadoReserva:
+        type: string
+    required:
+    - estadoReserva
     type: object
   handlers.updateHabitacionRequest:
     properties:
@@ -345,31 +324,28 @@ definitions:
     - apellidos
     - cedula
     - correo
-    - estado
     - nombre
     - telefono
     type: object
   handlers.updateRequest:
     properties:
+      cedula:
+        type: string
       email:
         type: string
       estado:
         type: integer
-      id:
-        type: integer
+      image:
+        type: string
       name:
         type: string
       password:
         type: string
       role:
         type: string
-    required:
-    - id
     type: object
   handlers.updateReservaRequest:
     properties:
-      cantidadNoches:
-        type: integer
       estado:
         type: integer
       estadoReserva:
@@ -380,8 +356,13 @@ definitions:
         type: string
       idRecepcionista:
         type: string
+      iva:
+        type: number
+      subTotal:
+        type: number
+      total:
+        type: number
     required:
-    - cantidadNoches
     - estadoReserva
     - fechaReserva
     - idCliente
@@ -392,7 +373,7 @@ definitions:
       descripcion:
         type: string
       descuentoBase:
-        type: string
+        type: number
       estado:
         type: integer
       idTipoCliente:
@@ -768,7 +749,7 @@ paths:
       - clientes
   /detalles-reserva:
     get:
-      description: Devuelve la lista completa de detalles de reserva
+      description: Obtiene todos los detalles de reserva, activos e inactivos
       produces:
       - application/json
       responses:
@@ -776,34 +757,33 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/handlers.detalleReservaResponse'
+              additionalProperties: true
+              type: object
             type: array
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
-      summary: Obtener todos los detalles de reserva
+      summary: Obtener detalles de reserva
       tags:
       - detalles-reserva
     post:
       consumes:
       - application/json
-      description: Registra un nuevo detalle de reserva con cálculos de precios, impuestos
-        y descuentos
+      description: Agrega una habitación a una reserva y calcula tarifa, descuento,
+        subtotal, IVA y total
       parameters:
-      - description: Datos del detalle de reserva
+      - description: Datos del detalle
         in: body
-        name: detalle
+        name: datos
         required: true
         schema:
           $ref: '#/definitions/handlers.createDetalleReservaRequest'
@@ -818,20 +798,17 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
@@ -840,9 +817,9 @@ paths:
       - detalles-reserva
   /detalles-reserva/{idDetalleReserva}:
     delete:
-      description: Cambia el estado del detalle de reserva (activo/inactivo)
+      description: Alterna el estado lógico del detalle entre activo e inactivo
       parameters:
-      - description: ID del detalle de reserva
+      - description: ID del detalle
         in: path
         name: idDetalleReserva
         required: true
@@ -858,30 +835,27 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
-      summary: Eliminar/Activar detalle de reserva (soft delete)
+      summary: Activar o desactivar detalle de reserva
       tags:
       - detalles-reserva
     get:
-      description: Busca un detalle de reserva por su ID
+      description: Obtiene un detalle de reserva específico
       parameters:
-      - description: ID del detalle de reserva
+      - description: ID del detalle
         in: path
         name: idDetalleReserva
         required: true
@@ -892,49 +866,42 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.detalleReservaResponse'
+            additionalProperties: true
+            type: object
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
       summary: Obtener detalle de reserva por ID
       tags:
       - detalles-reserva
-    put:
+    patch:
       consumes:
       - application/json
-      description: Actualiza los datos de un detalle de reserva existente
+      description: Actualiza habitación, cantidad de personas y opcionalmente las
+        fechas del detalle
       parameters:
-      - description: ID del detalle de reserva
+      - description: ID del detalle
         in: path
         name: idDetalleReserva
         required: true
         type: integer
-      - description: Datos a actualizar
+      - description: Datos actualizados
         in: body
-        name: detalle
+        name: datos
         required: true
         schema:
           $ref: '#/definitions/handlers.updateDetalleReservaRequest'
@@ -949,30 +916,148 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
       summary: Actualizar detalle de reserva
+      tags:
+      - detalles-reserva
+  /detalles-reserva/habitacion/{idHabitacion}/fechas-ocupadas:
+    get:
+      description: Obtiene los rangos de fechas ocupados por detalles activos
+      parameters:
+      - description: ID de la habitación
+        in: path
+        name: idHabitacion
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties:
+                type: string
+              type: object
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener fechas ocupadas de una habitación
+      tags:
+      - detalles-reserva
+  /detalles-reserva/habitacion/{idHabitacion}/tarifa:
+    get:
+      description: Obtiene la tarifa activa correspondiente a una habitación para
+        una fecha determinada
+      parameters:
+      - description: ID de la habitación
+        in: path
+        name: idHabitacion
+        required: true
+        type: integer
+      - description: Fecha en formato YYYY-MM-DD
+        in: query
+        name: fecha
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener tarifa por habitación y fecha
+      tags:
+      - detalles-reserva
+  /detalles-reserva/reserva/{idReserva}:
+    get:
+      description: Obtiene los detalles activos pertenecientes a una reserva
+      parameters:
+      - description: ID de la reserva
+        in: path
+        name: idReserva
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener detalles por reserva
       tags:
       - detalles-reserva
   /habitaciones:
@@ -1191,6 +1276,35 @@ paths:
       summary: Actualizar habitación
       tags:
       - habitaciones
+  /habitaciones/disponibles:
+    get:
+      description: Obtiene habitaciones activas con tipo y tarifa activos y con tarifa
+        vigente actualmente
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener habitaciones disponibles
+      tags:
+      - habitaciones
   /habitaciones/tipo/{id}:
     get:
       description: Busca habitaciones por ID de tipo de habitación
@@ -1241,7 +1355,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Autentica un usuario y retorna un token JWT
+      description: Autentica un usuario y retorna un token PASETO
       parameters:
       - description: Credenciales del usuario
         in: body
@@ -1579,7 +1693,7 @@ paths:
       - recepcionistas
   /reservas:
     get:
-      description: Devuelve la lista completa de reservas
+      description: Obtiene todas las reservas activas
       produces:
       - application/json
       responses:
@@ -1587,33 +1701,32 @@ paths:
           description: OK
           schema:
             items:
+              additionalProperties: true
               type: object
             type: array
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
-      summary: Obtener todas las reservas
+      summary: Obtener reservas
       tags:
       - reservas
     post:
       consumes:
       - application/json
-      description: Registra una nueva reserva en el sistema
+      description: Registra una nueva reserva
       parameters:
       - description: Datos de la reserva
         in: body
-        name: reserva
+        name: datos
         required: true
         schema:
           $ref: '#/definitions/handlers.registerReservaRequest'
@@ -1628,20 +1741,17 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
@@ -1650,7 +1760,7 @@ paths:
       - reservas
   /reservas/{id}:
     delete:
-      description: Cambia el estado de la reserva en vez de borrarla físicamente
+      description: Alterna el estado lógico de una reserva entre activo e inactivo
       parameters:
       - description: ID de la reserva
         in: path
@@ -1663,40 +1773,30 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
-      summary: Eliminar reserva (soft delete)
+      summary: Activar o desactivar reserva
       tags:
       - reservas
     get:
-      description: Busca una reserva por su ID
+      description: Obtiene una reserva activa utilizando su ID
       parameters:
       - description: ID de la reserva
         in: path
@@ -1709,24 +1809,24 @@ paths:
         "200":
           description: OK
           schema:
-            type: object
+            items:
+              additionalProperties: true
+              type: object
+            type: array
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
@@ -1736,16 +1836,16 @@ paths:
     put:
       consumes:
       - application/json
-      description: Actualiza los datos de una reserva existente
+      description: Actualiza la información de una reserva existente
       parameters:
       - description: ID de la reserva
         in: path
         name: id
         required: true
         type: integer
-      - description: Datos a actualizar
+      - description: Datos actualizados de la reserva
         in: body
-        name: reserva
+        name: datos
         required: true
         schema:
           $ref: '#/definitions/handlers.updateReservaRequest'
@@ -1755,43 +1855,78 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
       summary: Actualizar reserva
       tags:
       - reservas
+  /reservas/{id}/estado:
+    patch:
+      consumes:
+      - application/json
+      description: Modifica el estado descriptivo de una reserva
+      parameters:
+      - description: ID de la reserva
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Nuevo estado de la reserva
+        in: body
+        name: datos
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.updateEstadoReservaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Actualizar estado de reserva
+      tags:
+      - reservas
   /reservas/cliente/{id}:
     get:
-      description: Busca reservas por ID de cliente
+      description: Obtiene las reservas activas asociadas a un cliente
       parameters:
-      - description: ID del cliente
+      - description: Cédula del cliente
         in: path
         name: id
         required: true
@@ -1803,19 +1938,18 @@ paths:
           description: OK
           schema:
             items:
+              additionalProperties: true
               type: object
             type: array
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
-        "404":
-          description: Not Found
+        "500":
+          description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
@@ -1824,9 +1958,9 @@ paths:
       - reservas
   /reservas/recepcionista/{id}:
     get:
-      description: Busca reservas por ID de recepcionista
+      description: Obtiene las reservas activas asociadas a un recepcionista
       parameters:
-      - description: ID del recepcionista
+      - description: Cédula del recepcionista
         in: path
         name: id
         required: true
@@ -1838,19 +1972,18 @@ paths:
           description: OK
           schema:
             items:
+              additionalProperties: true
               type: object
             type: array
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
-        "404":
-          description: Not Found
+        "500":
+          description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
@@ -1929,45 +2062,6 @@ paths:
       tags:
       - tarifas
   /tarifas/{idTarifa}:
-    delete:
-      description: Elimina una tarifa del sistema (soft delete)
-      parameters:
-      - description: ID de la tarifa
-        in: path
-        name: idTarifa
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Eliminar tarifa
-      tags:
-      - tarifas
     patch:
       consumes:
       - application/json
@@ -2015,7 +2109,128 @@ paths:
       summary: Actualizar tarifa
       tags:
       - tarifas
-  /tarifas/{nombreTarifa}:
+  /tarifas/{idTarifa}/activar:
+    patch:
+      description: Activa una tarifa si se encuentra dentro de su periodo de vigencia
+      parameters:
+      - description: ID de la tarifa
+        in: path
+        name: idTarifa
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Activar tarifa
+      tags:
+      - tarifas
+  /tarifas/{idTarifa}/desactivar:
+    patch:
+      description: Desactiva manualmente una tarifa
+      parameters:
+      - description: ID de la tarifa
+        in: path
+        name: idTarifa
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Desactivar tarifa
+      tags:
+      - tarifas
+  /tarifas/{idTarifa}/estadisticas:
+    get:
+      description: Obtiene la cantidad de reservas que utilizaron la tarifa y la última
+        vez que fue utilizada
+      parameters:
+      - description: ID de la tarifa
+        in: path
+        name: idTarifa
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener estadísticas de una tarifa
+      tags:
+      - tarifas
+  /tarifas/nombre/{nombreTarifa}:
     get:
       description: Busca una tarifa por su nombre
       parameters:
@@ -2362,43 +2577,12 @@ paths:
       - tipos-cliente
   /tipos-habitacion:
     get:
-      description: Devuelve la lista completa de tipos de habitación
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Obtener todos los tipos de habitación
-      tags:
-      - tipos-habitacion
-    post:
-      consumes:
-      - application/json
-      description: Registra un nuevo tipo de habitación en el sistema
+      description: Obtiene todos los tipos de habitación y permite filtrar por estado
       parameters:
-      - description: Datos del tipo de habitación
-        in: body
-        name: tipoHabitacion
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.registerTipoHabitacionRequest'
+      - description: 'Estado: 0 inactivo, 1 activo'
+        in: query
+        name: estado
+        type: integer
       produces:
       - application/json
       responses:
@@ -2410,20 +2594,46 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
-        "500":
-          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Obtener tipos de habitación
+      tags:
+      - tipos-habitacion
+    post:
+      consumes:
+      - application/json
+      description: Registra un nuevo tipo de habitación
+      parameters:
+      - description: Datos del tipo de habitación
+        in: body
+        name: datos
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.registerTipoHabitacionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
@@ -2432,53 +2642,8 @@ paths:
       - tipos-habitacion
   /tipos-habitacion/{id}:
     delete:
-      description: Cambia el estado del tipo de habitación en vez de borrarlo físicamente
-      parameters:
-      - description: ID del tipo de habitación
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Eliminar tipo de habitación (soft delete)
-      tags:
-      - tipos-habitacion
-    get:
-      description: Busca un tipo de habitación por su ID
+      description: Realiza la eliminación lógica de un tipo de habitación cambiando
+        su estado
       parameters:
       - description: ID del tipo de habitación
         in: path
@@ -2496,26 +2661,53 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
-        "500":
-          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Desactivar tipo de habitación
+      tags:
+      - tipos-habitacion
+    get:
+      description: Obtiene la información de un tipo de habitación específico
+      parameters:
+      - description: ID del tipo de habitación
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
@@ -2532,9 +2724,9 @@ paths:
         name: id
         required: true
         type: integer
-      - description: Datos a actualizar
+      - description: Datos actualizados del tipo de habitación
         in: body
-        name: tipoHabitacion
+        name: datos
         required: true
         schema:
           $ref: '#/definitions/handlers.updateTipoHabitacionRequest'
@@ -2544,32 +2736,22 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
@@ -2577,57 +2759,8 @@ paths:
       tags:
       - tipos-habitacion
   /users:
-    delete:
-      consumes:
-      - application/json
-      description: Cambia el estado del usuario en vez de borrarlo físicamente
-      parameters:
-      - description: ID del usuario
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.deleteRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Eliminar usuario (soft delete)
-      tags:
-      - users
     get:
-      description: Devuelve la lista de usuarios activos
+      description: Obtiene la lista de usuarios registrados
       produces:
       - application/json
       responses:
@@ -2635,25 +2768,24 @@ paths:
           description: OK
           schema:
             items:
+              additionalProperties: true
               type: object
             type: array
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
-      summary: Obtener todos los usuarios
+      summary: Obtener usuarios
       tags:
-      - users
+      - usuarios
     post:
       consumes:
       - application/json
@@ -2661,7 +2793,7 @@ paths:
       parameters:
       - description: Datos del usuario
         in: body
-        name: user
+        name: datos
         required: true
         schema:
           $ref: '#/definitions/handlers.registerRequest'
@@ -2671,78 +2803,28 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Crear usuario
-      tags:
-      - users
-    put:
-      consumes:
-      - application/json
-      description: Actualiza datos del usuario (con o sin password)
-      parameters:
-      - description: Datos a actualizar
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.updateRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
-      summary: Actualizar usuario
+      summary: Crear usuario
       tags:
-      - users
+      - usuarios
   /users/{email}:
     get:
-      description: Busca un usuario por su correo electrónico
+      description: Obtiene un usuario activo utilizando su correo electrónico
       parameters:
-      - description: Email del usuario
+      - description: Correo electrónico del usuario
         in: path
         name: email
         required: true
@@ -2753,26 +2835,174 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              type: object
-            type: array
+            additionalProperties: true
+            type: object
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
       security:
       - BearerAuth: []
-      summary: Obtener usuario por email
+      summary: Obtener usuario por correo
       tags:
-      - users
+      - usuarios
+  /users/{id}:
+    delete:
+      description: Alterna el estado del usuario entre activo e inactivo
+      parameters:
+      - description: ID del usuario
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Activar o desactivar usuario
+      tags:
+      - usuarios
+    put:
+      consumes:
+      - application/json
+      description: Actualiza la información de un usuario existente
+      parameters:
+      - description: ID del usuario
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Datos actualizados del usuario
+        in: body
+        name: datos
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.updateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Actualizar usuario
+      tags:
+      - usuarios
+  /users/download/{filename}:
+    get:
+      description: Descarga o muestra una imagen de usuario almacenada en el servidor
+      parameters:
+      - description: Nombre del archivo
+        in: path
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Obtener imagen de usuario
+      tags:
+      - usuarios
+  /users/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Sube una imagen para utilizarla en el perfil de un usuario
+      parameters:
+      - description: Imagen del usuario
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Subir imagen de usuario
+      tags:
+      - usuarios
 securityDefinitions:
   BearerAuth:
     description: 'Escribe "Bearer " + tu token JWT. Ejemplo: "Bearer eyJhbGciOiJIUzI1NiIs..."'

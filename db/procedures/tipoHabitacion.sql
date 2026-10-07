@@ -8,7 +8,7 @@ GO
        1    = activos
        0    = inactivos
    ========================================================= */
-CREATE OR ALTER PROCEDURE dbo.sp_TipoHabitacion_Listar
+CREATE OR ALTER PROCEDURE dbo.pa_TipoHabitacion_Listar
     @soloActivos TINYINT = NULL
 AS
 BEGIN
@@ -43,7 +43,7 @@ GO
 /* =========================================================
    2. OBTENER TIPO DE HABITACIÓN POR ID
    ========================================================= */
-CREATE OR ALTER PROCEDURE dbo.sp_TipoHabitacion_ObtenerPorId
+CREATE OR ALTER PROCEDURE dbo.pa_TipoHabitacion_ObtenerPorId
     @idTipoHabitacion INT
 AS
 BEGIN
@@ -87,7 +87,7 @@ GO
 /* =========================================================
    3. CREAR TIPO DE HABITACIÓN
    ========================================================= */
-CREATE OR ALTER PROCEDURE dbo.sp_TipoHabitacion_Crear
+CREATE OR ALTER PROCEDURE dbo.pa_TipoHabitacion_Crear
     @nombreTipoHab VARCHAR(45),
     @descripcion VARCHAR(100),
     @capacidadMaxima INT
@@ -174,7 +174,7 @@ GO
 /* =========================================================
    4. ACTUALIZAR TIPO DE HABITACIÓN
    ========================================================= */
-CREATE OR ALTER PROCEDURE dbo.sp_TipoHabitacion_Actualizar
+CREATE OR ALTER PROCEDURE dbo.pa_TipoHabitacion_Actualizar
     @idTipoHabitacion INT,
     @nombreTipoHab VARCHAR(45),
     @descripcion VARCHAR(100),
@@ -286,7 +286,7 @@ GO
    5. ELIMINAR LÓGICAMENTE UN TIPO DE HABITACIÓN
    No borra el registro: cambia estado a 0
    ========================================================= */
-CREATE OR ALTER PROCEDURE dbo.sp_TipoHabitacion_Eliminar
+CREATE OR ALTER PROCEDURE dbo.pa_TipoHabitacion_Eliminar
     @idTipoHabitacion INT
 AS
 BEGIN
