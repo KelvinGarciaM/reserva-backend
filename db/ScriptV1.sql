@@ -14,7 +14,6 @@
 
    PENDIENTE PARA VERSIONES POSTERIORES DEL MISMO SCRIPT:
    - Índices finales y justificación de optimización
-   - Funciones definitivas del proyecto
    - Usuarios/roles del motor SQL Server y privilegios
    - Tablas y triggers de auditoría requeridos por el proyecto
    - Procedimientos de respaldo y restauración
@@ -1614,6 +1613,238 @@ GO
    PENDIENTE: se incorporarán únicamente funciones con utilidad real dentro
    del sistema.
    --------------------------------------------------------------------------- */
+/* ============================================================================
+   FUNCIONES - HABITACIÓN
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   fn_HabitacionesDisponibles
+
+   Devuelve las habitaciones activas disponibles dentro de un rango de fechas.
+   Una habitación se considera disponible cuando no existe ningún detalle de
+   reserva activo cuyo rango de fechas se cruce con el período solicitado.
+
+   También devuelve el tipo de habitación y su capacidad máxima.
+
+   Importancia:
+   Centraliza la lógica de disponibilidad y evita repetir las condiciones de
+   traslape en diferentes consultas del sistema.
+   --------------------------------------------------------------------------- */
+
+CREATE OR ALTER FUNCTION dbo.fn_HabitacionesDisponibles
+(
+    @fechaEntrada DATETIME,
+    @fechaSalida DATETIME
+)
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT
+        h.idHabitacion,
+        h.idTipoHab,
+        h.numeroHabitacion,
+        th.nombreTipoHab,
+        th.capacidadMaxima
+    FROM dbo.habitacion AS h
+    INNER JOIN dbo.tipohabitacion AS th
+        ON th.idTipoHabitacion = h.idTipoHab
+    WHERE h.estado = 1
+      AND th.estado = 1
+      AND NOT EXISTS
+      (
+          SELECT 1
+          FROM dbo.detallereserva AS dr
+          WHERE dr.idHabitacion = h.idHabitacion
+            AND dr.estado = 1
+            AND dr.fechaEntrada < @fechaSalida
+            AND dr.fechaSalida > @fechaEntrada
+      )
+);
+GO
+
+
+/* ============================================================================
+   FUNCIONES - CLIENTE
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   fn_HistorialReservasCliente
+
+   Devuelve el historial de reservas de un cliente incluyendo habitación,
+   tipo de habitación, tarifa, fechas, montos y estados de los registros.
+
+   Importancia:
+   Centraliza una consulta que requiere relacionar múltiples tablas y permite
+   reutilizarla en atención al cliente, reportes e historial de reservas.
+   --------------------------------------------------------------------------- */
+
+CREATE OR ALTER FUNCTION dbo.fn_HistorialReservasCliente
+(
+    @cedulaCliente VARCHAR(20)
+)
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT
+        r.idReserva,
+        r.fechaReserva,
+        r.estadoReserva,
+        r.estado AS estadoReservaRegistro,
+
+        h.idHabitacion,
+        h.numeroHabitacion,
+        th.nombreTipoHab,
+
+        t.idTarifa,
+        t.nombreTarifa,
+
+        dr.idDetalleReserva,
+        dr.fechaEntrada,
+        dr.fechaSalida,
+        dr.precioAplicado,
+        dr.subTotal,
+        dr.iva,
+        dr.total,
+        dr.estado AS estadoDetalle
+
+    FROM dbo.reserva AS r
+
+    INNER JOIN dbo.detallereserva AS dr
+        ON dr.idReserva = r.idReserva
+
+    INNER JOIN dbo.habitacion AS h
+        ON h.idHabitacion = dr.idHabitacion
+
+    INNER JOIN dbo.tipohabitacion AS th
+        ON th.idTipoHabitacion = h.idTipoHab
+
+    INNER JOIN dbo.tarifa AS t
+        ON t.idTarifa = dr.idTarifa
+
+    WHERE r.idCliente = @cedulaCliente
+);
+GO
+
+
+/* ---------------------------------------------------------------------------
+   fn_TotalReservasHuesped
+
+   Devuelve la cantidad de reservas activas y no canceladas asociadas
+   a un cliente.
+
+   Importancia:
+   Puede utilizarse para estadísticas, identificación de clientes frecuentes
+   y futuras reglas comerciales o de fidelización.
+   --------------------------------------------------------------------------- */
+
+CREATE OR ALTER FUNCTION dbo.fn_TotalReservasHuesped
+(
+    @cedula VARCHAR(20)
+)
+RETURNS INT
+AS
+BEGIN
+    DECLARE @total INT;
+
+    SELECT @total = COUNT(*)
+    FROM dbo.reserva
+    WHERE idCliente = @cedula
+      AND estado = 1
+      AND estadoReserva <> 'Cancelada';
+
+    RETURN ISNULL(@total, 0);
+END;
+GO
+
+
+/* ============================================================================
+   FUNCIONES - TARIFA
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   fn_TarifasVigentes
+
+   Devuelve las tarifas disponibles para una fecha específica tomando en
+   cuenta su estado, desactivación manual, vigencia y el estado del tipo
+   de habitación.
+
+   Importancia:
+   Centraliza la lógica necesaria para determinar qué tarifa puede aplicarse
+   a una estadía según la fecha seleccionada.
+   --------------------------------------------------------------------------- */
+
+CREATE OR ALTER FUNCTION dbo.fn_TarifasVigentes
+(
+    @fecha DATE
+)
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT
+        t.idTarifa,
+        t.nombreTarifa,
+        t.idTipoHabitacion,
+        th.nombreTipoHab,
+        t.precioBase,
+        t.fechaInicio,
+        t.fechaFin
+    FROM dbo.tarifa AS t
+    INNER JOIN dbo.tipohabitacion AS th
+        ON th.idTipoHabitacion = t.idTipoHabitacion
+    WHERE @fecha IS NOT NULL
+      AND t.estado = 1
+      AND t.desactivadaManual = 0
+      AND th.estado = 1
+      AND
+      (
+          t.fechaInicio IS NULL
+          OR t.fechaInicio <= @fecha
+      )
+      AND
+      (
+          t.fechaFin IS NULL
+          OR t.fechaFin >= @fecha
+      )
+);
+GO
+
+
+/* ============================================================================
+   FUNCIONES - DETALLE RESERVA
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   fn_NochesEstancia
+
+   Calcula la cantidad de noches comprendidas entre una fecha de entrada
+   y una fecha de salida.
+
+   Importancia:
+   Permite reutilizar el cálculo de noches en consultas, reportes y procesos
+   relacionados con el cálculo del precio de una estadía.
+   --------------------------------------------------------------------------- */
+
+CREATE OR ALTER FUNCTION dbo.fn_NochesEstancia
+(
+    @fechaEntrada DATE,
+    @fechaSalida DATE
+)
+RETURNS INT
+AS
+BEGIN
+    IF @fechaEntrada IS NULL
+       OR @fechaSalida IS NULL
+       OR @fechaSalida <= @fechaEntrada
+    BEGIN
+        RETURN 0;
+    END;
+
+    RETURN DATEDIFF(DAY, @fechaEntrada, @fechaSalida);
+END;
+GO
 
 /* ---------------------------------------------------------------------------
    17.3 USUARIOS Y ROLES DEL MOTOR SQL SERVER
