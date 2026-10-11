@@ -24,11 +24,12 @@ func NewServer(
 	habitacionRepository *repository.HabitacionRepository,
 	reservaRepository *repository.ReservaRepository,
 	detalleReservaRepository *repository.DetalleReservaRepository,
-	usuarioRepository *repository.UsuarioRepository,
+	sessions *security.SessionStore,
+	dsn string,
 	secret string,
 ) (*Server, error) {
 
-	//Crear builder
+	// Crear builder
 	builder, err := security.NewPasetoBuilder(secret)
 	if err != nil {
 		return nil, err
@@ -39,8 +40,7 @@ func NewServer(
 	}
 
 	// HANDLERS
-	userHandler := handlers.NewUserHandler(usuarioRepository)
-	authHandler := handlers.NewAuthHandler(usuarioRepository, builder)
+	authHandler := handlers.NewAuthHandler(builder, sessions, dsn)
 	reservaHandler := handlers.NewReservaHandler(reservaRepository)
 	detalleReservaHandler := handlers.NewDetalleReservaHandler(detalleReservaRepository)
 	tarifaHandler := handlers.NewTarifaHandler(tarifaRepository)
@@ -60,9 +60,8 @@ func NewServer(
 		MaxAge:         50 * time.Second,
 	}))
 
-	// PASAMOS BUILDER A LAS RUTAS
+	// PASAMOS BUILDER Y SESIONES A LAS RUTAS
 	SetupRoutes(router, Handlers{
-		UserHandler:           userHandler,
 		AuthHandler:           authHandler,
 		ReservaHandler:        reservaHandler,
 		DetalleReservaHandler: detalleReservaHandler,
@@ -72,7 +71,8 @@ func NewServer(
 		RecepcionistaHandler:  recepcionistaHandler,
 		TipoHabitacionHandler: tipoHabitacionHandler,
 		HabitacionHandler:     habitacionHandler,
-	}, builder)
+	}, builder, sessions)
+
 	server.Router = router
 	return server, nil
 }

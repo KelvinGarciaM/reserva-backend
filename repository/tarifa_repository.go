@@ -5,17 +5,18 @@ import (
 	"database/sql"
 	"time"
 
+	"reserva-backend/conexion"
 	"reserva-backend/models"
 
 	"github.com/shopspring/decimal"
 )
 
 type TarifaRepository struct {
-	db *sql.DB
+	db conexion.Querier
 }
 
 func NewTarifaRepository(
-	db *sql.DB,
+	db conexion.Querier,
 ) *TarifaRepository {
 	return &TarifaRepository{
 		db: db,

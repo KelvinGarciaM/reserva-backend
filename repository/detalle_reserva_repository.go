@@ -5,17 +5,18 @@ import (
 	"database/sql"
 	"time"
 
+	"reserva-backend/conexion"
 	"reserva-backend/models"
 
 	"github.com/shopspring/decimal"
 )
 
 type DetalleReservaRepository struct {
-	db *sql.DB
+	db conexion.Querier
 }
 
 func NewDetalleReservaRepository(
-	db *sql.DB,
+	db conexion.Querier,
 ) *DetalleReservaRepository {
 	return &DetalleReservaRepository{
 		db: db,

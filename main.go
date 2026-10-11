@@ -5,8 +5,10 @@ import (
 	"log"
 
 	"reserva-backend/api"
+	"reserva-backend/conexion"
 	docs "reserva-backend/docs"
 	"reserva-backend/repository"
+	"reserva-backend/security"
 	"reserva-backend/utils"
 
 	swaggerFiles "github.com/swaggo/files"
@@ -23,7 +25,7 @@ import (
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
-// @description Escribe "Bearer " + tu token JWT. Ejemplo: "Bearer eyJhbGciOiJIUzI1NiIs..."
+// @description Escribe "Bearer " + tu token. Ejemplo: "Bearer v2.local...."
 
 func main() {
 	docs.SwaggerInfo.BasePath = "/api/v1"
@@ -34,59 +36,51 @@ func main() {
 		log.Fatal("Error cargando config:", err)
 	}
 
-	// 2. Conexión a la base de datos
+	// 2. Verificación de conectividad con SQL Server.
+	// DB_SOURCE solo se usa para comprobar que el servidor responde y como
+	// plantilla (servidor y base) del login. Esta conexión se cierra enseguida:
+	// cada persona trabaja con SU propia conexión, con su usuario del motor.
 	conn, err := sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
 		log.Fatal("Error preparando la conexión:", err)
 	}
-	defer conn.Close()
 
 	if err := conn.Ping(); err != nil {
 		log.Fatal("No fue posible conectar con SQL Server:", err)
 	}
+	_ = conn.Close()
 
-	log.Println("Conexión con SQL Server establecida correctamente")
+	log.Println("Conexión con SQL Server verificada correctamente")
 
-	// Repositorios para acceso a datos en SQL Server
+	// 3. Selector de conexión por usuario y almacén de sesiones
+	resolver := conexion.NewResolver()
+	sessions := security.NewSessionStore()
+
+	// 4. Repositorios (usan la conexión del usuario que hace la petición)
 	tipoHabitacionRepository :=
-		repository.NewTipoHabitacionRepository(conn)
+		repository.NewTipoHabitacionRepository(resolver)
 
 	tipoClienteRepository :=
-		repository.NewTipoClienteRepository(conn)
+		repository.NewTipoClienteRepository(resolver)
 
 	recepcionistaRepository :=
-		repository.NewRecepcionistaRepository(conn)
+		repository.NewRecepcionistaRepository(resolver)
 
 	clienteRepository :=
-		repository.NewClienteRepository(conn)
+		repository.NewClienteRepository(resolver)
 
 	tarifaRepository :=
-		repository.NewTarifaRepository(conn)
+		repository.NewTarifaRepository(resolver)
 
 	habitacionRepository :=
-		repository.NewHabitacionRepository(conn)
+		repository.NewHabitacionRepository(resolver)
 
 	reservaRepository :=
-		repository.NewReservaRepository(conn)
+		repository.NewReservaRepository(resolver)
 
 	detalleReservaRepository :=
-		repository.NewDetalleReservaRepository(conn)
+		repository.NewDetalleReservaRepository(resolver)
 
-	usuarioRepository :=
-		repository.NewUsuarioRepository(conn)
-
-	err = utils.SeedAdmin(
-		usuarioRepository,
-		config,
-	)
-	if err != nil {
-		log.Fatal("Error creando administrador:", err)
-	}
-
-	log.Println(
-		"Administrador verificado correctamente:",
-		config.AdminEmail,
-	)
 	// 5. Server
 	server, err := api.NewServer(
 		tipoHabitacionRepository,
@@ -97,7 +91,8 @@ func main() {
 		habitacionRepository,
 		reservaRepository,
 		detalleReservaRepository,
-		usuarioRepository,
+		sessions,
+		config.DBSource,
 		config.TokenSymmetricKey,
 	)
 	if err != nil {
@@ -109,6 +104,7 @@ func main() {
 		"/swagger/*any",
 		ginSwagger.WrapHandler(swaggerFiles.Handler),
 	)
+
 	// 7. Iniciar servidor
 	err = server.Start(config.ServerURL)
 	if err != nil {

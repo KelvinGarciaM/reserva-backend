@@ -24,8 +24,8 @@ func NewPasetoBuilder(key string) (Builder, error) {
 	}, nil
 }
 
-func (b *PasetoBuilder) CreateToken(userID int32, email, role, name, image string, duration time.Duration) (string, error) {
-	payload, err := NewPayload(userID, email, role, name, image, duration)
+func (b *PasetoBuilder) CreateToken(userID int32, email, role, name, image, sessionID string, duration time.Duration) (string, error) {
+	payload, err := NewPayload(userID, email, role, name, image, sessionID, duration)
 	if err != nil {
 		return "", err
 	}

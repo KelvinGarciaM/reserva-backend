@@ -16,17 +16,19 @@ type Payload struct {
 	Role      string    `json:"role"`
 	Name      string    `json:"name"`
 	Image     string    `json:"image"`
+	SessionID string    `json:"session_id"`
 	IssuedAt  time.Time `json:"issued_at"`
 	ExpiredAt time.Time `json:"expired_at"`
 }
 
-func NewPayload(userID int32, email, role, name, image string, duration time.Duration) (*Payload, error) {
+func NewPayload(userID int32, email, role, name, image, sessionID string, duration time.Duration) (*Payload, error) {
 	return &Payload{
 		UserID:    userID,
 		Email:     email,
 		Role:      role,
 		Name:      name,
 		Image:     image,
+		SessionID: sessionID,
 		IssuedAt:  time.Now(),
 		ExpiredAt: time.Now().Add(duration),
 	}, nil

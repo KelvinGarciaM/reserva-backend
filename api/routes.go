@@ -9,7 +9,6 @@ import (
 )
 
 type Handlers struct {
-	UserHandler           *handlers.UserHandler
 	AuthHandler           *handlers.AuthHandler
 	ReservaHandler        *handlers.ReservaHandler
 	TarifaHandler         *handlers.TarifaHandler
@@ -21,7 +20,18 @@ type Handlers struct {
 	HabitacionHandler     *handlers.HabitacionHandler
 }
 
-func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
+// Nombres de rol (deben coincidir con los que devuelve el login).
+const (
+	rolAdmin     = "Administrador"
+	rolRecepcion = "Recepcionista"
+)
+
+func SetupRoutes(
+	r *gin.Engine,
+	h Handlers,
+	builder security.Builder,
+	sessions *security.SessionStore,
+) {
 
 	// =========================
 	// PUBLIC
@@ -32,21 +42,18 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 	}
 
 	// =========================
-	// PROTECTED
+	// PROTECTED (token + sesión válida en cada petición)
 	// =========================
 	protected := r.Group("/api/v1")
-	protected.Use(middleware.AuthMiddleware(builder))
+	protected.Use(middleware.AuthMiddleware(builder, sessions))
 	{
+		// LOGOUT (cualquier usuario con sesión)
+		protected.POST("/logout", h.AuthHandler.Logout)
+
 		// ========== SOLO ADMIN ==========
 		admin := protected.Group("/")
-		admin.Use(middleware.RoleMiddleware("Administrador"))
+		admin.Use(middleware.RequireRole(rolAdmin))
 		{
-			// USERS
-			admin.GET("/users", h.UserHandler.GetUsers)
-			admin.POST("/users", h.UserHandler.Register)
-			admin.PUT("/users/:id", h.UserHandler.UpdateUser)
-			admin.DELETE("/users/:id", h.UserHandler.ToggleUserStatus)
-
 			// TIPO CLIENTE - escritura
 			admin.POST("/tipos-cliente", h.TipoClienteHandler.CreateTipoCliente)
 			admin.PUT("/tipos-cliente", h.TipoClienteHandler.UpdateTipoCliente)
@@ -79,17 +86,14 @@ func SetupRoutes(r *gin.Engine, h Handlers, builder security.Builder) {
 			admin.GET("/recepcionistas", h.RecepcionistaHandler.GetRecepcionistas)
 			admin.GET("/recepcionistas/buscar", h.RecepcionistaHandler.SearchRecepcionistas)
 			admin.GET("/recepcionistas/:cedula", h.RecepcionistaHandler.GetRecepcionistaByCedula)
+
+			// (Próximos módulos solo admin: respaldo/restauración y auditoría)
 		}
 
 		// ========== ADMIN + RECEPCIONISTA ==========
 		staff := protected.Group("/")
-		staff.Use(middleware.RoleMiddleware("Administrador", "Recepcionista"))
+		staff.Use(middleware.RequireRole(rolAdmin, rolRecepcion))
 		{
-			// USERS
-			staff.GET("/users/:email", h.UserHandler.GetUserByEmail)
-			staff.POST("/users/upload", h.UserHandler.UploadUserImg)
-			staff.GET("/users/download/:filename", h.UserHandler.DownloadUserImg)
-
 			// TIPO CLIENTE - lectura
 			staff.GET("/tipos-cliente", h.TipoClienteHandler.GetTipoClientes)
 			staff.GET("/tipos-cliente/buscar", h.TipoClienteHandler.SearchTipoClientes)

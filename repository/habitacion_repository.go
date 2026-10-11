@@ -4,15 +4,16 @@ import (
 	"context"
 	"database/sql"
 
+	"reserva-backend/conexion"
 	"reserva-backend/models"
 )
 
 type HabitacionRepository struct {
-	db *sql.DB
+	db conexion.Querier
 }
 
 func NewHabitacionRepository(
-	db *sql.DB,
+	db conexion.Querier,
 ) *HabitacionRepository {
 	return &HabitacionRepository{
 		db: db,

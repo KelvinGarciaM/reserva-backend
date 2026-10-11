@@ -1,0 +1,24 @@
+INFORME DE COMPARACION
+
+Fuentes comparadas:
+- ScriptV2_COMPLETO (1).sql: script maestro actual.
+- function.zip: backend anterior entregado como referencia.
+
+Resultado: el script maestro contiene objetos nuevos que no estaban en el ZIP anterior, y se encontraron 11 definiciones existentes en ambos archivos cuyo código difiere al normalizar espacios, comentarios, USE y GO. Esto significa que no se deben mezclar silenciosamente: para el backend actual se usa la versión del script maestro, mientras que la carpeta version_anterior_function_zip conserva intactos los archivos antiguos.
+
+Definiciones con diferencias detectadas:
+- dbo.fn_HistorialReservasCliente
+- dbo.pa_Cliente_Crear
+- dbo.pa_DetalleReserva_Crear
+- dbo.pa_Habitacion_Crear
+- dbo.pa_Recepcionista_Listar
+- dbo.pa_Reserva_Crear
+- dbo.pa_Tarifa_Crear
+- dbo.pa_TipoCliente_Listar
+- dbo.pa_TipoHabitacion_Listar
+- dbo.pa_Usuario_Crear
+- dbo.trg_TipoHabitacion_Auditoria
+
+La comparación detecta diferencias textuales en las definiciones SQL; no implica por sí sola que una versión sea mejor. Antes de reemplazar objetos en producción, hay que revisar las diferencias funcionales.
+
+Cobertura extraída del script maestro en las carpetas modulares: 9 tablas principales + tablas de auditoría, 10 vistas, 43 procedimientos, 5 funciones, 13 triggers y 15 índices. Se excluyó deliberadamente el bloque inicial que elimina y recrea la base de datos, y también los INSERT de datos de ejemplo, para evitar que un archivo modular borre datos accidentalmente.

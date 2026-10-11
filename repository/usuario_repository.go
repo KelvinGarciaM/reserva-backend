@@ -6,11 +6,12 @@ import (
 	"errors"
 	"strings"
 
+	"reserva-backend/conexion"
 	"reserva-backend/models"
 )
 
 type UsuarioRepository struct {
-	db *sql.DB
+	db conexion.Querier
 }
 
 type CrearUsuarioResultado struct {
@@ -31,7 +32,7 @@ type ToggleUsuarioResultado struct {
 }
 
 func NewUsuarioRepository(
-	db *sql.DB,
+	db conexion.Querier,
 ) *UsuarioRepository {
 	return &UsuarioRepository{
 		db: db,
