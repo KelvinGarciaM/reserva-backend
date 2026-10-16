@@ -3,8 +3,10 @@ package main
 import (
 	"database/sql"
 	"log"
+	"net/url"
 
 	"reserva-backend/api"
+	"reserva-backend/api/handlers"
 	"reserva-backend/conexion"
 	docs "reserva-backend/docs"
 	"reserva-backend/repository"
@@ -36,19 +38,19 @@ func main() {
 		log.Fatal("Error cargando config:", err)
 	}
 
-	// 2. Verificación de conectividad con SQL Server.
-	// DB_SOURCE solo se usa para comprobar que el servidor responde y como
-	// plantilla (servidor y base) del login. Esta conexión se cierra enseguida:
-	// cada persona trabaja con SU propia conexión, con su usuario del motor.
-	conn, err := sql.Open(config.DBDriver, config.DBSource)
+	// 2. Conexión usada SOLO para leer la tabla users durante el login
+	// (todavía no hay sesión, así que se usa el login admin del motor).
+	// DB_SOURCE se usa como plantilla: servidor y base de datos.
+	dbAuth, err := abrirConexion(
+		config.DBDriver,
+		config.DBSource,
+		config.DBAdminUser,
+		config.DBAdminPassword,
+	)
 	if err != nil {
-		log.Fatal("Error preparando la conexión:", err)
-	}
-
-	if err := conn.Ping(); err != nil {
 		log.Fatal("No fue posible conectar con SQL Server:", err)
 	}
-	_ = conn.Close()
+	defer dbAuth.Close()
 
 	log.Println("Conexión con SQL Server verificada correctamente")
 
@@ -56,7 +58,12 @@ func main() {
 	resolver := conexion.NewResolver()
 	sessions := security.NewSessionStore()
 
-	// 4. Repositorios (usan la conexión del usuario que hace la petición)
+	// 4. Repositorios
+	// El de usuarios usa la conexión de login (dbAuth).
+	// Los demás usan la conexión de la sesión de quien hace la petición.
+	usuarioRepository :=
+		repository.NewUsuarioRepository(dbAuth)
+
 	tipoHabitacionRepository :=
 		repository.NewTipoHabitacionRepository(resolver)
 
@@ -83,6 +90,7 @@ func main() {
 
 	// 5. Server
 	server, err := api.NewServer(
+		usuarioRepository,
 		tipoHabitacionRepository,
 		tipoClienteRepository,
 		recepcionistaRepository,
@@ -93,6 +101,14 @@ func main() {
 		detalleReservaRepository,
 		sessions,
 		config.DBSource,
+		handlers.CredencialBD{
+			Usuario: config.DBAdminUser,
+			Clave:   config.DBAdminPassword,
+		},
+		handlers.CredencialBD{
+			Usuario: config.DBRecepcionUser,
+			Clave:   config.DBRecepcionPassword,
+		},
 		config.TokenSymmetricKey,
 	)
 	if err != nil {
@@ -110,4 +126,26 @@ func main() {
 	if err != nil {
 		log.Fatal("Error al correr server:", err)
 	}
+}
+
+// abrirConexion toma DB_SOURCE (formato URL), le pone el usuario y la
+// contraseña indicados y comprueba que el servidor los acepte.
+func abrirConexion(driver, dsn, usuario, clave string) (*sql.DB, error) {
+	u, err := url.Parse(dsn)
+	if err != nil {
+		return nil, err
+	}
+	u.User = url.UserPassword(usuario, clave)
+
+	db, err := sql.Open(driver, u.String())
+	if err != nil {
+		return nil, err
+	}
+
+	if err := db.Ping(); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+
+	return db, nil
 }

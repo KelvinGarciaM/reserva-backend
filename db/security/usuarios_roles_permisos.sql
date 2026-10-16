@@ -122,4 +122,5 @@ DENY SELECT  ON dbo.auditoriaTipoHabitacion  TO rol_recepcion;
 DENY SELECT  ON dbo.recepcionistalogin      TO rol_recepcion;
 DENY EXECUTE ON dbo.pa_Respaldo_Crear        TO rol_recepcion;
 DENY EXECUTE ON dbo.pa_Respaldo_Listar       TO rol_recepcion;
+DENY SELECT ON dbo.users TO rol_recepcion;
 GO

@@ -297,11 +297,56 @@ VALUES
 (3, 95000, 'Temporada Alta Suite', '2026-07-01', '2026-12-31', 'Tarifa para suite en temporada alta');
 GO
 
-/*
-   Los usuarios de la aplicación NO se guardan en una tabla: son usuarios
-   reales del motor (login_admin_hotel y login_recepcion_hotel), que se crean
-   en la sección 14 junto con sus roles y permisos.
-*/
+/* ----------------------------------------------------------------------------
+   USUARIOS DE LA APLICACIÓN (tabla users)
+   Sirve para validar email + contraseña (hash bcrypt) y decidir con qué login
+   del motor se conecta el backend:
+     role 'Administrador' -> login_admin_hotel
+     role 'Recepcionista' -> login_recepcion_hotel
+   Contraseñas de prueba:
+     Administradores (Kelvin, Melissa): Admin#Hotel2026!
+     Recepcionistas  (Gerald, Andy)   : Recep#Hotel2026!
+   ---------------------------------------------------------------------------- */
+CREATE TABLE dbo.users
+(
+    id         INT IDENTITY(1,1) NOT NULL,
+    name       VARCHAR(100) NOT NULL,
+    role       VARCHAR(30)  NULL
+        CONSTRAINT df_users_role DEFAULT ('user'),
+    email      VARCHAR(150) NOT NULL,
+    password   VARCHAR(255) NOT NULL,
+    estado     TINYINT      NOT NULL
+        CONSTRAINT df_users_estado DEFAULT (1),
+    image      VARCHAR(255) NULL,
+    cedula     VARCHAR(20)  NULL,
+    created_at DATETIME2    NOT NULL
+        CONSTRAINT df_users_created DEFAULT (SYSDATETIME()),
+    updated_at DATETIME2    NOT NULL
+        CONSTRAINT df_users_updated DEFAULT (SYSDATETIME()),
+
+    CONSTRAINT pk_users PRIMARY KEY (id),
+    CONSTRAINT uq_users_email UNIQUE (email),
+    CONSTRAINT chk_users_estado CHECK (estado IN (0,1)),
+    CONSTRAINT fk_users_recepcionista
+        FOREIGN KEY (cedula) REFERENCES dbo.recepcionista (cedula)
+);
+GO
+
+INSERT INTO dbo.users (name, role, email, password, cedula, image)
+VALUES
+('Kelvin Garcia Medrano', 'Administrador', 'kelvin@hotel.com',
+ '$2b$10$N1BIZWW.pt/kpN2T175idepBnZFejO/Xicibe6B/.XDahempDMv/2',
+ '504470975', '82cd4330-57c6-4ad7-97e7-0dd1d0f3db46_kelvinperfil.jpg'),
+('Melissa Tijerino', 'Administrador', 'melissa@hotel.com',
+ '$2b$10$N1BIZWW.pt/kpN2T175idepBnZFejO/Xicibe6B/.XDahempDMv/2',
+ NULL, '10febf7d-34f9-4613-91ea-b5dfd46711e6_Melissa.png'),
+('Gerald Araya Jimenez', 'Recepcionista', 'gerald@hotel.com',
+ '$2b$10$Bkd.UwZLrXkYhNk90gcCVen6ajosWw9aPGblRRvqe4RNfR9F9CVJq',
+ '112340001', '643e8b36-2515-4635-ad4b-e98e26cc8653_Gerald.png'),
+('Andy Alvarado', 'Recepcionista', 'andy@hotel.com',
+ '$2b$10$Bkd.UwZLrXkYhNk90gcCVen6ajosWw9aPGblRRvqe4RNfR9F9CVJq',
+ '223450002', '6a85f430-85dd-43c2-873e-e7550c764d39_Andy.png');
+GO
 
 /* ============================================================================
    5. VISTAS - DEFINICIONES REALES DEL BACKEND
@@ -3247,6 +3292,209 @@ END;
 GO
 
 
+/* ----------------------------------------------------------------------------
+   USUARIOS DE LA APLICACIÓN: vista y procedimientos
+   (los usa UsuarioRepository: Listar, Crear, Actualizar y ToggleEstado)
+   La vista NO expone la contraseña.
+   ---------------------------------------------------------------------------- */
+USE reservasdbV2;
+GO
+
+CREATE OR ALTER VIEW dbo.vw_Usuario_Detalle
+AS
+SELECT
+    id,
+    name,
+    role,
+    email,
+    image,
+    cedula,
+    created_at,
+    updated_at,
+    estado
+FROM dbo.users;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.pa_Usuario_Crear
+    @name     VARCHAR(100),
+    @email    VARCHAR(150),
+    @password VARCHAR(255),
+    @role     VARCHAR(30)  = NULL,
+    @image    VARCHAR(255) = NULL,
+    @cedula   VARCHAR(20)  = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        SET @name   = LTRIM(RTRIM(@name));
+        SET @email  = LTRIM(RTRIM(@email));
+        SET @role   = NULLIF(LTRIM(RTRIM(@role)), '');
+        SET @cedula = NULLIF(LTRIM(RTRIM(@cedula)), '');
+
+        IF @name IS NULL OR @name = ''
+            THROW 50901, 'El nombre es obligatorio.', 1;
+
+        IF @email IS NULL OR @email = ''
+            THROW 50902, 'El correo es obligatorio.', 1;
+
+        IF @password IS NULL OR @password = ''
+            THROW 50903, 'La contraseña es obligatoria.', 1;
+
+        -- Sin rol indicado se asigna el de menos privilegios.
+        IF @role IS NULL
+            SET @role = 'Recepcionista';
+
+        IF @role NOT IN ('Administrador', 'Recepcionista')
+            THROW 50904, 'El rol debe ser Administrador o Recepcionista.', 1;
+
+        BEGIN TRANSACTION;
+
+        IF EXISTS (
+            SELECT 1 FROM dbo.users WITH (UPDLOCK, HOLDLOCK)
+            WHERE email = @email
+        )
+            THROW 50905, 'Ya existe un usuario con ese correo.', 1;
+
+        IF @cedula IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM dbo.recepcionista WHERE cedula = @cedula)
+            THROW 50906, 'La cédula indicada no pertenece a un recepcionista.', 1;
+
+        INSERT INTO dbo.users (name, role, email, password, estado, image, cedula)
+        VALUES (@name, @role, @email, @password, 1, @image, @cedula);
+
+        DECLARE @nuevoId INT = CONVERT(INT, SCOPE_IDENTITY());
+
+        COMMIT TRANSACTION;
+
+        SELECT @nuevoId AS id, 'Usuario creado exitosamente.' AS mensaje;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO
+
+/* NULL en @role, @image, @password y @estado = conservar el valor actual.
+   @cedula se guarda tal cual (NULL la borra; útil al pasar a Administrador). */
+CREATE OR ALTER PROCEDURE dbo.pa_Usuario_Actualizar
+    @id       INT,
+    @name     VARCHAR(100),
+    @email    VARCHAR(150),
+    @role     VARCHAR(30)  = NULL,
+    @image    VARCHAR(255) = NULL,
+    @cedula   VARCHAR(20)  = NULL,
+    @password VARCHAR(255) = NULL,
+    @estado   TINYINT      = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        SET @name   = LTRIM(RTRIM(@name));
+        SET @email  = LTRIM(RTRIM(@email));
+        SET @role   = NULLIF(LTRIM(RTRIM(@role)), '');
+        SET @cedula = NULLIF(LTRIM(RTRIM(@cedula)), '');
+
+        IF @name IS NULL OR @name = ''
+            THROW 50907, 'El nombre es obligatorio.', 1;
+
+        IF @email IS NULL OR @email = ''
+            THROW 50908, 'El correo es obligatorio.', 1;
+
+        IF @role IS NOT NULL AND @role NOT IN ('Administrador', 'Recepcionista')
+            THROW 50904, 'El rol debe ser Administrador o Recepcionista.', 1;
+
+        IF @estado IS NOT NULL AND @estado NOT IN (0, 1)
+            THROW 50909, 'El estado debe ser 0 o 1.', 1;
+
+        BEGIN TRANSACTION;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM dbo.users WITH (UPDLOCK, HOLDLOCK)
+            WHERE id = @id
+        )
+            THROW 50910, 'El usuario que intenta actualizar no existe.', 1;
+
+        IF EXISTS (
+            SELECT 1 FROM dbo.users
+            WHERE email = @email AND id <> @id
+        )
+            THROW 50911, 'Ya existe otro usuario con ese correo.', 1;
+
+        IF @cedula IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM dbo.recepcionista WHERE cedula = @cedula)
+            THROW 50906, 'La cédula indicada no pertenece a un recepcionista.', 1;
+
+        UPDATE dbo.users
+        SET name       = @name,
+            email      = @email,
+            role       = COALESCE(@role, role),
+            image      = COALESCE(@image, image),
+            cedula     = @cedula,
+            password   = COALESCE(@password, password),
+            estado     = COALESCE(@estado, estado),
+            updated_at = SYSDATETIME()
+        WHERE id = @id;
+
+        DECLARE @filas INT = @@ROWCOUNT;
+
+        COMMIT TRANSACTION;
+
+        SELECT @id AS id, @filas AS filasAfectadas,
+               'Usuario actualizado exitosamente.' AS mensaje;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.pa_Usuario_ToggleEstado
+    @id INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM dbo.users WITH (UPDLOCK, HOLDLOCK)
+            WHERE id = @id
+        )
+            THROW 50912, 'El usuario indicado no existe.', 1;
+
+        UPDATE dbo.users
+        SET estado     = CASE WHEN estado = 1 THEN 0 ELSE 1 END,
+            updated_at = SYSDATETIME()
+        WHERE id = @id;
+
+        DECLARE @nuevoEstado TINYINT;
+
+        SELECT @nuevoEstado = estado FROM dbo.users WHERE id = @id;
+
+        COMMIT TRANSACTION;
+
+        SELECT @id AS id, @nuevoEstado AS estado,
+               'Estado actualizado exitosamente.' AS mensaje;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO
+
+
 /* ============================================================================
    7. FUNCIONES - DEFINICIONES REALES DEL BACKEND
    ============================================================================ */
@@ -4451,7 +4699,8 @@ GO
    aplicación inicia sesión con ellos y habilita o deshabilita funciones según
    el rol (rol_admin_hotel o rol_recepcion).
    La autenticación y los permisos los controla el motor de base de datos
-   (no existe una tabla de usuarios en la aplicación).
+   (la tabla users solo valida email y contraseña y decide con qué login del
+   motor se conecta la aplicación según el rol).
    Las contraseñas de ejemplo van también en el documento escrito (apartado i).
    ============================================================================ */
 
@@ -4566,6 +4815,8 @@ DENY SELECT  ON dbo.auditoriaTarifa          TO rol_recepcion;
 DENY SELECT  ON dbo.auditoriaRespaldo        TO rol_recepcion;
 DENY SELECT  ON dbo.auditoriaTipoHabitacion  TO rol_recepcion;
 DENY SELECT  ON dbo.recepcionistalogin      TO rol_recepcion;
+DENY SELECT  ON dbo.users                   TO rol_recepcion;
+DENY SELECT  ON dbo.vw_Usuario_Detalle       TO rol_recepcion;
 DENY EXECUTE ON dbo.pa_Respaldo_Crear        TO rol_recepcion;
 DENY EXECUTE ON dbo.pa_Respaldo_Listar       TO rol_recepcion;
 GO

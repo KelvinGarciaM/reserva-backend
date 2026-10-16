@@ -16,6 +16,7 @@ type Server struct {
 }
 
 func NewServer(
+	usuarioRepository *repository.UsuarioRepository,
 	tipoHabitacionRepository *repository.TipoHabitacionRepository,
 	tipoClienteRepository *repository.TipoClienteRepository,
 	recepcionistaRepository *repository.RecepcionistaRepository,
@@ -26,6 +27,8 @@ func NewServer(
 	detalleReservaRepository *repository.DetalleReservaRepository,
 	sessions *security.SessionStore,
 	dsn string,
+	adminBD handlers.CredencialBD,
+	recepcionBD handlers.CredencialBD,
 	secret string,
 ) (*Server, error) {
 
@@ -40,7 +43,15 @@ func NewServer(
 	}
 
 	// HANDLERS
-	authHandler := handlers.NewAuthHandler(builder, sessions, dsn)
+	authHandler := handlers.NewAuthHandler(
+		usuarioRepository,
+		builder,
+		sessions,
+		dsn,
+		adminBD,
+		recepcionBD,
+	)
+	usuarioHandler := handlers.NewUserHandler(usuarioRepository)
 	reservaHandler := handlers.NewReservaHandler(reservaRepository)
 	detalleReservaHandler := handlers.NewDetalleReservaHandler(detalleReservaRepository)
 	tarifaHandler := handlers.NewTarifaHandler(tarifaRepository)
@@ -67,6 +78,7 @@ func NewServer(
 		DetalleReservaHandler: detalleReservaHandler,
 		TarifaHandler:         tarifaHandler,
 		ClienteHandler:        clienteHandler,
+		UsuarioHandler:        usuarioHandler,
 		TipoClienteHandler:    tipoClienteHandler,
 		RecepcionistaHandler:  recepcionistaHandler,
 		TipoHabitacionHandler: tipoHabitacionHandler,

@@ -8,12 +8,12 @@ import (
 	"net/url"
 	"time"
 
+	"reserva-backend/repository"
 	"reserva-backend/security"
 
 	"github.com/gin-gonic/gin"
 )
 
-// Valores de rol que ya usa el frontend y las rutas (RequireRole).
 const (
 	rolAdmin     = "Administrador"
 	rolRecepcion = "Recepcionista"
@@ -21,26 +21,46 @@ const (
 
 const duracionSesion = 24 * time.Hour
 
+// CredencialBD es el login real del motor SQL Server que se usa según el rol.
+type CredencialBD struct {
+	Usuario string
+	Clave   string
+}
+
 type AuthHandler struct {
+	usuarios *repository.UsuarioRepository // tabla usuario (email + hash bcrypt)
 	token    security.Builder
 	sessions *security.SessionStore
-	baseDSN  string // DB_SOURCE: se usa solo como plantilla (servidor y base)
+	baseDSN  string                  // DB_SOURCE: solo plantilla (servidor y base)
+	cuentas  map[string]CredencialBD // rol de la app -> login del motor
 }
 
 func NewAuthHandler(
+	usuarios *repository.UsuarioRepository,
 	token security.Builder,
 	sessions *security.SessionStore,
 	baseDSN string,
+	admin CredencialBD,
+	recepcion CredencialBD,
 ) *AuthHandler {
-	return &AuthHandler{token: token, sessions: sessions, baseDSN: baseDSN}
+	return &AuthHandler{
+		usuarios: usuarios,
+		token:    token,
+		sessions: sessions,
+		baseDSN:  baseDSN,
+		cuentas: map[string]CredencialBD{
+			rolAdmin:     admin,
+			rolRecepcion: recepcion,
+		},
+	}
 }
 
 /* =========================
-   DTOs
+   DTOs (los mismos del login original)
 ========================= */
 
 type loginRequest struct {
-	Username string `json:"username" binding:"required"`
+	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
@@ -63,12 +83,12 @@ type loginResponse struct {
 ========================= */
 
 // Login godoc
-// @Summary Iniciar sesión con un usuario de SQL Server
-// @Description Valida las credenciales contra el motor de base de datos y retorna un token PASETO
+// @Summary Iniciar sesión
+// @Description Valida el usuario en la tabla usuario y abre la conexión con el login del motor que corresponde a su rol
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param credentials body loginRequest true "Usuario y contraseña del motor"
+// @Param credentials body loginRequest true "Credenciales del usuario"
 // @Success 200 {object} loginResponse
 // @Failure 400 {object} map[string]string
 // @Failure 401 {object} map[string]string
@@ -85,69 +105,84 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// 1. El propio SQL Server valida usuario y contraseña.
-	db, err := h.abrirConexion(c.Request.Context(), req.Username, req.Password)
+	// 1. Buscar al usuario activo en la tabla usuario.
+	user, err := h.usuarios.ObtenerPorEmail(c.Request.Context(), req.Email)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Usuario o contraseña incorrectos",
+			"error": "Usuario no existe o se encuentra inactivo",
 		})
 		return
 	}
 
-	// 2. Se consulta quién es y a qué rol del motor pertenece.
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
-	defer cancel()
-
-	var (
-		nombreBD    string
-		principalID int32
-		rol         string
-		cedula      sql.NullString
-	)
-
-	err = db.QueryRowContext(ctx, `
-		SELECT
-			USER_NAME(),
-			DATABASE_PRINCIPAL_ID(),
-			CASE
-				WHEN IS_MEMBER('rol_admin_hotel') = 1 THEN 'Administrador'
-				WHEN IS_MEMBER('rol_recepcion')   = 1 THEN 'Recepcionista'
-				ELSE ''
-			END,
-			dbo.fn_RecepcionistaActual()
-	`).Scan(&nombreBD, &principalID, &rol, &cedula)
-
-	if err != nil {
-		_ = db.Close()
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "No fue posible consultar el rol del usuario",
+	// 2. Comparar la contraseña con el hash bcrypt.
+	if err := security.CheckPassword(req.Password, user.Password); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Contraseña incorrecta",
 		})
 		return
 	}
 
-	if rol == "" {
-		_ = db.Close()
+	// 3. Según el rol del usuario, se elige el login del motor.
+	rol := user.Role.String
+	cred, ok := h.cuentas[rol]
+	if !ok {
 		c.JSON(http.StatusForbidden, gin.H{
 			"error": "Tu usuario no tiene un rol asignado en el sistema",
 		})
 		return
 	}
 
-	// 3. Se abre la sesión en el servidor (la conexión queda guardada).
+	// 4. Se abre la conexión con el login del motor (admin o recepción).
+	db, err := h.abrirConexion(c.Request.Context(), cred.Usuario, cred.Clave)
+	if err != nil {
+		log.Printf("no se pudo abrir la conexión del rol %s: %v", rol, err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "No fue posible conectar con la base de datos",
+		})
+		return
+	}
+
+	// 5. Doble verificación: el motor debe confirmar el mismo rol.
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
+	var rolMotor string
+	err = db.QueryRowContext(ctx, `
+		SELECT CASE
+			WHEN IS_MEMBER('rol_admin_hotel') = 1 THEN 'Administrador'
+			WHEN IS_MEMBER('rol_recepcion')   = 1 THEN 'Recepcionista'
+			ELSE ''
+		END
+	`).Scan(&rolMotor)
+
+	if err != nil || rolMotor != rol {
+		_ = db.Close()
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "El rol del usuario no coincide con el rol de la base de datos",
+		})
+		return
+	}
+
+	// 6. Se abre la sesión en el servidor (la conexión queda guardada).
 	sessionID := h.sessions.Create(&security.Session{
 		DB:        db,
-		Username:  req.Username,
+		Username:  user.Email,
 		Role:      rol,
 		ExpiresAt: time.Now().Add(duracionSesion),
 	})
 
-	// 4. Token PASETO (no lleva la contraseña, solo el id de sesión).
+	image := ""
+	if user.Image.Valid {
+		image = user.Image.String
+	}
+
+	// 7. Token PASETO (lleva el id de sesión, nunca contraseñas).
 	token, err := h.token.CreateToken(
-		principalID,
-		req.Username,
+		user.ID,
+		user.Email,
 		rol,
-		nombreBD,
-		"",
+		user.Name,
+		image,
 		sessionID,
 		duracionSesion,
 	)
@@ -159,18 +194,18 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// 5. Auditoría de inicio de sesión (si falla, no bloquea el ingreso).
-	h.registrarSesion(ctx, db, "LOGIN", req.Username, c.ClientIP(), "Inicio de sesión")
+	// 8. Auditoría (si falla, no bloquea el ingreso).
+	h.registrarSesion(ctx, db, "LOGIN", user.Email, c.ClientIP(), "Inicio de sesión")
 
 	c.JSON(http.StatusOK, loginResponse{
 		AccessToken: token,
 		User: loginUser{
-			ID:     principalID,
-			Name:   nombreBD,
-			Email:  req.Username,
+			ID:     user.ID,
+			Name:   user.Name,
+			Email:  user.Email,
 			Role:   rol,
-			Image:  "",
-			Cedula: cedula,
+			Image:  image,
+			Cedula: user.Cedula,
 		},
 	})
 }
@@ -210,8 +245,8 @@ func (h *AuthHandler) Logout(c *gin.Context) {
    AUXILIARES
 ========================= */
 
-// abrirConexion toma DB_SOURCE (formato URL), cambia usuario y contraseña
-// por los que escribió la persona y comprueba que el motor los acepte.
+// abrirConexion toma DB_SOURCE (formato URL), pone el login del motor
+// correspondiente al rol y comprueba que el motor lo acepte.
 func (h *AuthHandler) abrirConexion(ctx context.Context, usuario, clave string) (*sql.DB, error) {
 	u, err := url.Parse(h.baseDSN)
 	if err != nil {
