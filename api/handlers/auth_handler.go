@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"reserva-backend/repository"
@@ -33,6 +34,16 @@ type AuthHandler struct {
 	sessions *security.SessionStore
 	baseDSN  string                  // DB_SOURCE: solo plantilla (servidor y base)
 	cuentas  map[string]CredencialBD // rol de la app -> login del motor
+
+	// Si admin y recepción usan el MISMO login del motor (caso de hostings como
+	// SmarterASP.NET, que no permiten CREATE LOGIN), el motor no puede distinguir
+	// el rol y la doble verificación se omite. El control por rol lo siguen
+	// haciendo las rutas (RequireRole).
+	validarRolMotor bool
+
+	// Un solo pool por login del motor, compartido por todas las sesiones.
+	mu    sync.Mutex
+	pools map[string]*sql.DB
 }
 
 func NewAuthHandler(
@@ -52,6 +63,8 @@ func NewAuthHandler(
 			rolAdmin:     admin,
 			rolRecepcion: recepcion,
 		},
+		validarRolMotor: admin.Usuario != recepcion.Usuario,
+		pools:           make(map[string]*sql.DB),
 	}
 }
 
@@ -132,8 +145,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// 4. Se abre la conexión con el login del motor (admin o recepción).
-	db, err := h.abrirConexion(c.Request.Context(), cred.Usuario, cred.Clave)
+	// 4. Se obtiene la conexión con el login del motor (admin o recepción).
+	db, err := h.conexionCompartida(c.Request.Context(), cred)
 	if err != nil {
 		log.Printf("no se pudo abrir la conexión del rol %s: %v", rol, err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -142,25 +155,29 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// 5. Doble verificación: el motor debe confirmar el mismo rol.
+	// 5. Doble verificación: el motor debe confirmar el mismo rol
+	// (solo cuando admin y recepción usan logins distintos del motor).
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
-	var rolMotor string
-	err = db.QueryRowContext(ctx, `
-		SELECT CASE
-			WHEN IS_MEMBER('rol_admin_hotel') = 1 THEN 'Administrador'
-			WHEN IS_MEMBER('rol_recepcion')   = 1 THEN 'Recepcionista'
-			ELSE ''
-		END
-	`).Scan(&rolMotor)
+	if h.validarRolMotor {
+		var rolMotor string
+		err = db.QueryRowContext(ctx, `
+			SELECT CASE
+				WHEN IS_MEMBER('rol_admin_hotel') = 1 THEN 'Administrador'
+				WHEN IS_MEMBER('rol_recepcion')   = 1 THEN 'Recepcionista'
+				ELSE ''
+			END
+		`).Scan(&rolMotor)
 
-	if err != nil || rolMotor != rol {
-		_ = db.Close()
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": "El rol del usuario no coincide con el rol de la base de datos",
-		})
-		return
+		if err != nil || rolMotor != rol {
+			log.Printf("rol del motor (%q) no coincide con el rol de la app (%q) para %s: %v",
+				rolMotor, rol, user.Email, err)
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "El rol del usuario no coincide con el rol de la base de datos",
+			})
+			return
+		}
 	}
 
 	// 6. Se abre la sesión en el servidor (la conexión queda guardada).
@@ -169,6 +186,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		Username:  user.Email,
 		Role:      rol,
 		ExpiresAt: time.Now().Add(duracionSesion),
+		Shared:    true,
 	})
 
 	image := ""
@@ -244,6 +262,32 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 /* =========================
    AUXILIARES
 ========================= */
+
+// conexionCompartida devuelve el pool del login del motor indicado. Se crea la
+// primera vez y se reutiliza en los siguientes inicios de sesión, para no abrir
+// un pool nuevo por cada login (los hostings compartidos limitan las conexiones).
+func (h *AuthHandler) conexionCompartida(ctx context.Context, cred CredencialBD) (*sql.DB, error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if db, ok := h.pools[cred.Usuario]; ok {
+		pingCtx, cancel := context.WithTimeout(ctx, 8*time.Second)
+		defer cancel()
+
+		if err := db.PingContext(pingCtx); err != nil {
+			return nil, err
+		}
+		return db, nil
+	}
+
+	db, err := h.abrirConexion(ctx, cred.Usuario, cred.Clave)
+	if err != nil {
+		return nil, err
+	}
+
+	h.pools[cred.Usuario] = db
+	return db, nil
+}
 
 // abrirConexion toma DB_SOURCE (formato URL), pone el login del motor
 // correspondiente al rol y comprueba que el motor lo acepte.
