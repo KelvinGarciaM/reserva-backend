@@ -9,6 +9,10 @@ type Config struct {
 	API               string `mapstructure:"API_VERSION"`
 	TokenSymmetricKey string `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 
+	// Dominio público del backend para Swagger (opcional). Si está vacío se usa
+	// RENDER_EXTERNAL_HOSTNAME (Render lo define solo) o localhost.
+	SwaggerHost string `mapstructure:"SWAGGER_HOST"`
+
 	// Logins reales del motor SQL Server (uno por rol)
 	DBAdminUser         string `mapstructure:"DB_ADMIN_USER"`
 	DBAdminPassword     string `mapstructure:"DB_ADMIN_PASSWORD"`
@@ -35,6 +39,7 @@ func LoadConfig(path string) (config Config, err error) {
 	viper.BindEnv("SERVER_URL")
 	viper.BindEnv("API_VERSION")
 	viper.BindEnv("TOKEN_SYMMETRIC_KEY")
+	viper.BindEnv("SWAGGER_HOST")
 
 	viper.BindEnv("DB_ADMIN_USER")
 	viper.BindEnv("DB_ADMIN_PASSWORD")
