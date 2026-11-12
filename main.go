@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"net/url"
+	"os"
 
 	"reserva-backend/api"
 	"reserva-backend/api/handlers"
@@ -121,8 +122,16 @@ func main() {
 		ginSwagger.WrapHandler(swaggerFiles.Handler),
 	)
 
-	// 7. Iniciar servidor
-	err = server.Start(config.ServerURL)
+	// 7. Iniciar servidor usando el puerto de Render
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Println("Iniciando backend en puerto:", port)
+
+	err = server.Start(":" + port)
 	if err != nil {
 		log.Fatal("Error al correr server:", err)
 	}
