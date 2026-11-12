@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 
@@ -14,6 +15,7 @@ import (
 	"reserva-backend/security"
 	"reserva-backend/utils"
 
+	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
@@ -37,6 +39,17 @@ func main() {
 	config, err := utils.LoadConfig("./utils")
 	if err != nil {
 		log.Fatal("Error cargando config:", err)
+	}
+
+	// Swagger: en Render debe apuntar al dominio público, no a localhost.
+	// Render define RENDER_EXTERNAL_HOSTNAME automáticamente.
+	swaggerHost := config.SwaggerHost
+	if swaggerHost == "" {
+		swaggerHost = os.Getenv("RENDER_EXTERNAL_HOSTNAME")
+	}
+	if swaggerHost != "" {
+		docs.SwaggerInfo.Host = swaggerHost
+		docs.SwaggerInfo.Schemes = []string{"https"}
 	}
 
 	// 2. Conexión usada SOLO para leer la tabla users durante el login
@@ -121,6 +134,15 @@ func main() {
 		"/swagger/*any",
 		ginSwagger.WrapHandler(swaggerFiles.Handler),
 	)
+
+	// Ruta de salud (raíz y /health) para Render y para comprobar el despliegue.
+	estado := func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	}
+	server.Router.GET("/", estado)
+	server.Router.HEAD("/", estado)
+	server.Router.GET("/health", estado)
+	server.Router.HEAD("/health", estado)
 
 	// 7. Iniciar servidor usando el puerto de Render
 	port := os.Getenv("PORT")

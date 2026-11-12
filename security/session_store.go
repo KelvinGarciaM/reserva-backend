@@ -15,6 +15,10 @@ type Session struct {
 	Username  string
 	Role      string
 	ExpiresAt time.Time
+
+	// Shared indica que DB es un pool compartido entre sesiones (un pool por
+	// login del motor). En ese caso cerrar la sesión NO cierra la conexión.
+	Shared bool
 }
 
 // SessionStore guarda las sesiones activas en memoria (id -> sesión).
@@ -59,7 +63,7 @@ func (s *SessionStore) Delete(id string) {
 	delete(s.items, id)
 	s.mu.Unlock()
 
-	if ok && sess.DB != nil {
+	if ok && sess.DB != nil && !sess.Shared {
 		_ = sess.DB.Close()
 	}
 }

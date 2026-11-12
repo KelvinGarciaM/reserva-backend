@@ -16,6 +16,8 @@ WORKDIR /app
 
 RUN apk add --no-cache tzdata
 
+ENV GIN_MODE=release
+
 COPY --from=builder /app/main .
 COPY --from=builder /app/utils/images ./utils/images
 
