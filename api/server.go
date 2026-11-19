@@ -63,6 +63,11 @@ func NewServer(
 	habitacionHandler := handlers.NewHabitacionHandler(habitacionRepository)
 	respaldoHandler := handlers.NewRespaldoHandler(respaldoRepository)
 
+	respaldoHandler.AlRestaurar = func() {
+		authHandler.ReciclarPools()
+		usuarioRepository.ReciclarConexiones()
+	}
+
 	// ROUTER
 	router := gin.Default()
 

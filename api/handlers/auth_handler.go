@@ -263,6 +263,18 @@ func (h *AuthHandler) Logout(c *gin.Context) {
    AUXILIARES
 ========================= */
 
+// ReciclarPools descarta las conexiones inactivas de los pools compartidos.
+// Se usa después de restaurar la base, que deja esas conexiones muertas.
+func (h *AuthHandler) ReciclarPools() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	for _, db := range h.pools {
+		db.SetMaxIdleConns(0) // cierra las inactivas
+		db.SetMaxIdleConns(2) // vuelve al valor normal
+	}
+}
+
 // conexionCompartida devuelve el pool del login del motor indicado. Se crea la
 // primera vez y se reutiliza en los siguientes inicios de sesión, para no abrir
 // un pool nuevo por cada login (los hostings compartidos limitan las conexiones).

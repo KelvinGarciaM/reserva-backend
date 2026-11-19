@@ -17,6 +17,8 @@ const tiempoMaxRespaldo = 10 * time.Minute
 type RespaldoHandler struct {
 	repository *repository.RespaldoRepository
 	ocupado    sync.Mutex
+
+	AlRestaurar func()
 }
 
 func NewRespaldoHandler(repository *repository.RespaldoRepository) *RespaldoHandler {
@@ -122,5 +124,8 @@ func (h *RespaldoHandler) Restaurar(c *gin.Context) {
 		return
 	}
 
+	if h.AlRestaurar != nil {
+		h.AlRestaurar()
+	}
 	c.JSON(http.StatusOK, resultado)
 }

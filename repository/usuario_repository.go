@@ -362,3 +362,11 @@ func (r *UsuarioRepository) ToggleEstado(
 
 	return resultado, err
 }
+
+// ReciclarConexiones descarta las conexiones inactivas del pool de login.
+func (r *UsuarioRepository) ReciclarConexiones() {
+	if db, ok := r.db.(*sql.DB); ok {
+		db.SetMaxIdleConns(0)
+		db.SetMaxIdleConns(2)
+	}
+}
