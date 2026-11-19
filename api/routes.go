@@ -19,6 +19,7 @@ type Handlers struct {
 	TipoHabitacionHandler *handlers.TipoHabitacionHandler
 	HabitacionHandler     *handlers.HabitacionHandler
 	UsuarioHandler        *handlers.UserHandler
+	RespaldoHandler       *handlers.RespaldoHandler
 }
 
 const (
@@ -91,6 +92,11 @@ func SetupRoutes(
 				"/users/:id/toggle",
 				h.UsuarioHandler.ToggleUserStatus,
 			)
+
+			// RESPALDOS Y RESTAURACIÓN
+			admin.GET("/respaldos", h.RespaldoHandler.Listar)
+			admin.POST("/respaldos", h.RespaldoHandler.Crear)
+			admin.POST("/respaldos/restaurar", h.RespaldoHandler.Restaurar)
 
 			// ---------------------------------------------
 			// TIPOS DE CLIENTE: ESCRITURA

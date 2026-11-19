@@ -25,6 +25,7 @@ func NewServer(
 	habitacionRepository *repository.HabitacionRepository,
 	reservaRepository *repository.ReservaRepository,
 	detalleReservaRepository *repository.DetalleReservaRepository,
+	respaldoRepository *repository.RespaldoRepository,
 	sessions *security.SessionStore,
 	dsn string,
 	adminBD handlers.CredencialBD,
@@ -60,6 +61,7 @@ func NewServer(
 	recepcionistaHandler := handlers.NewRecepcionistaHandler(recepcionistaRepository)
 	tipoHabitacionHandler := handlers.NewTipoHabitacionHandler(tipoHabitacionRepository)
 	habitacionHandler := handlers.NewHabitacionHandler(habitacionRepository)
+	respaldoHandler := handlers.NewRespaldoHandler(respaldoRepository)
 
 	// ROUTER
 	router := gin.Default()
@@ -83,6 +85,7 @@ func NewServer(
 		RecepcionistaHandler:  recepcionistaHandler,
 		TipoHabitacionHandler: tipoHabitacionHandler,
 		HabitacionHandler:     habitacionHandler,
+		RespaldoHandler:       respaldoHandler,
 	}, builder, sessions)
 
 	server.Router = router

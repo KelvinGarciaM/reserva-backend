@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	"reserva-backend/api"
 	"reserva-backend/api/handlers"
@@ -102,6 +103,32 @@ func main() {
 	detalleReservaRepository :=
 		repository.NewDetalleReservaRepository(resolver)
 
+	abrirMaster := func() (*sql.DB, error) {
+		u, err := url.Parse(config.DBSource)
+		if err != nil {
+			return nil, err
+		}
+
+		q := u.Query()
+		for k := range q {
+			if strings.EqualFold(k, "database") {
+				q.Del(k)
+			}
+		}
+		q.Set("database", "master")
+		u.RawQuery = q.Encode()
+
+		return abrirConexion(
+			config.DBDriver,
+			u.String(),
+			config.DBAdminUser,
+			config.DBAdminPassword,
+		)
+	}
+
+	respaldoRepository :=
+		repository.NewRespaldoRepository(resolver, config.BackupPath, abrirMaster)
+
 	// 5. Server
 	server, err := api.NewServer(
 		usuarioRepository,
@@ -113,6 +140,7 @@ func main() {
 		habitacionRepository,
 		reservaRepository,
 		detalleReservaRepository,
+		respaldoRepository,
 		sessions,
 		config.DBSource,
 		handlers.CredencialBD{
@@ -125,6 +153,7 @@ func main() {
 		},
 		config.TokenSymmetricKey,
 	)
+
 	if err != nil {
 		log.Fatal("Error iniciando server:", err)
 	}
